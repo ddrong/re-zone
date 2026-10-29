@@ -1,16 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { districts } from '@/lib/regions';
-import { searchOfficialZones } from '@/lib/public-zones';
+import { searchOfficialZones, lastOfficialSuccess } from '@/lib/public-zones';
 const query = z.object({
   q: z.string().max(80),
   district: z.string().refine((v) => !v || districts.some((d) => d.code === v)),
   type: z.enum(['', '재개발', '재건축']),
+  stage: z.string().regex(/^(?:[0-8])?$/),
   page: z.coerce.number().int().min(1).max(100),
 });
 export async function GET(request: NextRequest) {
   const p = request.nextUrl.searchParams;
   const parsed = query.safeParse({
+    stage: p.get('stage') ?? '',
     q: p.get('q') ?? '',
     district: p.get('district') ?? '',
     type: p.get('type') ?? '',
@@ -28,6 +30,7 @@ export async function GET(request: NextRequest) {
   } catch {
     return NextResponse.json(
       {
+        lastSuccessAt: lastOfficialSuccess(),
         message:
           '부산시 공개자료를 불러오지 못했습니다. 잠시 후 다시 시도하거나 공식 출처를 확인해 주세요.',
       },

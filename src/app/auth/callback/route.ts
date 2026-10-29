@@ -23,9 +23,13 @@ export async function GET(request: NextRequest) {
       /* No provider errors or tokens in logs. */
     }
   }
+  const cancelled =
+    request.nextUrl.searchParams.get('error') === 'access_denied';
   const target = success
     ? withAuthSuccess(next)
-    : '/auth/error?next=' + encodeURIComponent(next);
+    : '/auth/error?next=' +
+      encodeURIComponent(next) +
+      (cancelled ? '&reason=cancelled' : '');
   const response = NextResponse.redirect(new URL(target, PRODUCTION_ORIGIN));
   response.cookies.delete('jeongbi_auth_return');
   response.headers.set('Cache-Control', 'private, no-store');

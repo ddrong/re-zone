@@ -10,6 +10,7 @@ type Params = Promise<{
   type?: string;
   page?: string;
   mode?: string;
+  stage?: string;
 }>;
 export default function Areas({ searchParams }: { searchParams: Params }) {
   return (
@@ -33,6 +34,8 @@ async function InitialSearch({ searchParams }: { searchParams: Params }) {
   const validPage =
     Number.isInteger(page) && page >= 1 && page <= 100 ? page : 1;
   const mode = p.mode === 'demo' ? 'demo' : 'official';
+  const stage =
+    typeof p.stage === 'string' && /^[0-8]$/.test(p.stage) ? p.stage : '';
   let result = null;
   if (mode === 'official')
     try {
@@ -41,6 +44,7 @@ async function InitialSearch({ searchParams }: { searchParams: Params }) {
         q: query,
         type,
         page: validPage,
+        stage,
       });
     } catch {
       /* Never substitute demo records for failed official searches. */
@@ -53,6 +57,7 @@ async function InitialSearch({ searchParams }: { searchParams: Params }) {
       initialType={type || '전체'}
       initialPage={validPage}
       initialMode={mode}
+      initialStage={stage}
     />
   );
 }

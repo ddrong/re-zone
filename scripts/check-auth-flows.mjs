@@ -71,12 +71,19 @@ const cookieStore = {
 let failure = null;
 let signupRequest = null;
 let configured = true;
+let oauthRequest = null;
+let oauthDestination =
+  'https://auth-test.example/auth/v1/authorize?provider=kakao';
 const client = {
   auth: {
     signInWithPassword: async () => ({ error: failure }),
     signUp: async (data) => {
       signupRequest = data;
       return { data: { session: null }, error: failure };
+    },
+    signInWithOAuth: async (request) => {
+      oauthRequest = request;
+      return { data: { url: oauthDestination }, error: failure };
     },
     signOut: async () => ({ error: failure }),
     exchangeCodeForSession: async () => ({ error: failure }),
@@ -217,3 +224,89 @@ console.log(
   'PASS safe return paths, mocked login/signup/logout, production callbacks, error separation, token-free redirects and address-only map inputs',
 );
 console.log('No real account, email, database write or live map key was used.');
+
+const savedAuthUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://auth-test.example';
+failure = null;
+await assert.rejects(
+  () => actions.startKakao({ message: '', success: false }, form),
+  (e) => e.destination === oauthDestination,
+);
+assert.equal(oauthRequest.provider, 'kakao');
+assert.equal(nav.callbackReturnTo(oauthRequest.options.redirectTo), returnPath);
+assert.equal(oauthRequest.options.skipBrowserRedirect, true);
+assert.equal(store.get('jeongbi_auth_return'), returnPath);
+oauthDestination = 'https://evil.example/auth/v1/authorize';
+assert.equal(
+  (await actions.startKakao({ message: '', success: false }, form)).success,
+  false,
+);
+configured = false;
+assert.equal(
+  (await actions.startKakao({ message: '', success: false }, form)).success,
+  false,
+);
+configured = true;
+failure = null;
+const cancelledUrl = new URL(
+  nav.PRODUCTION_ORIGIN +
+    '/auth/callback?error=access_denied&next=%2Ffavorites',
+);
+const cancelled = await load('src/app/auth/callback/route.ts', aliases).GET({
+  nextUrl: cancelledUrl,
+});
+assert.equal(
+  new URL(cancelled.headers.get('location')).searchParams.get('reason'),
+  'cancelled',
+);
+if (savedAuthUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+else process.env.NEXT_PUBLIC_SUPABASE_URL = savedAuthUrl;
+const calculator = load('src/lib/calculator.ts');
+const blank = calculator.emptyAmounts();
+assert.ok(Object.values(blank).every((v) => v === ''));
+assert.equal(calculator.calculateAmounts(blank, '기준').profit, null);
+const amounts = {
+  purchase: '38000',
+  contribution: '12000',
+  expenses: '3000',
+  future: '65000',
+};
+assert.equal(calculator.calculateAmounts(amounts, '기준').invested, 53000);
+assert.equal(calculator.calculateAmounts(amounts, '기준').profit, 12000);
+assert.equal(
+  calculator.calculateAmounts(amounts, '보수적').projectedValue,
+  52000,
+);
+assert.equal(
+  calculator.calculateAmounts(amounts, '낙관적').projectedValue,
+  74750,
+);
+for (const invalid of [
+  '',
+  '-1',
+  'NaN',
+  'Infinity',
+  '1e5',
+  '1.234',
+  '1000000001',
+])
+  assert.equal(
+    calculator.calculateAmounts({ ...amounts, purchase: invalid }, '기준')
+      .profit,
+    null,
+  );
+assert.equal(
+  calculator.calculateAmounts(
+    { ...amounts, purchase: '0', contribution: '0', expenses: '0' },
+    '기준',
+  ).returnRate,
+  null,
+);
+assert.equal(
+  calculator.calculateAmounts(calculator.emptyAmounts(), '낙관적')
+    .projectedValue,
+  null,
+);
+console.log(
+  'PASS mocked Kakao OAuth, cancellation, unsafe provider redirect rejection; calculator blank/reset, invalid amounts and manwon units',
+);

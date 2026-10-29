@@ -9,14 +9,10 @@ import {
   Heart,
   UserRound,
 } from 'lucide-react';
-import {
-  HomePage,
-  FavoritesPage,
-  AlertsPage,
-  AnalysisPage,
-  MyPage,
-} from './prototype-views';
-import { initialNotices } from '@/lib/prototype-data';
+import { AnalysisPage, MyPage } from './prototype-views';
+import { PersonalRegions } from './personal-regions';
+import { DashboardHome } from './dashboard-home';
+import { calculateAmounts, emptyAmounts } from '@/lib/calculator';
 import { AppHeader } from './app-header';
 import { ListingResources } from './listing-resources';
 type Page =
@@ -62,12 +58,8 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
     ? 'detail'
     : ((Object.keys(routes).find((key) => routes[key] === pathname) as
         Page | undefined) ?? 'other');
-  const [favorites, setFavorites] = useState(['u', 's']);
+  const [favorites] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-  const [favoriteTab, setFavoriteTab] = useState('내 관심');
-  const [notices, setNotices] = useState(
-    initialNotices.map((item) => ({ ...item, read: item.id === 3 })),
-  );
   const [preferences, setPreferences] = useState({
     sale: true,
     auction: true,
@@ -78,12 +70,7 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
   });
   const [frequency, setFrequency] = useState('instant');
   const [scenario, setScenario] = useState('기준');
-  const [inputs, setInputs] = useState({
-    purchase: '38000',
-    contribution: '12000',
-    expenses: '3000',
-    future: '65000',
-  });
+  const [inputs, setInputs] = useState(emptyAmounts);
   const navigate = (nextPage: string) => router.push(routes[nextPage] ?? '/');
   const openZone = (id: string) => {
     setRecent((items) =>
@@ -91,32 +78,11 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
     );
     router.push('/zones/' + encodeURIComponent(id));
   };
-  const toggleFavorite = (id: string) =>
-    setFavorites((items) =>
-      items.includes(id) ? items.filter((item) => item !== id) : [...items, id],
-    );
-  const markRead = (id: number) =>
-    setNotices((items) =>
-      items.map((item) => (item.id === id ? { ...item, read: true } : item)),
-    );
-  const markAll = () =>
-    setNotices((items) => items.map((item) => ({ ...item, read: true })));
-  const pageForNotice = (id: number) => {
-    const item = notices.find((n) => n.id === id);
-    if (item) {
-      markRead(id);
-      openZone(item.zone);
-    }
-  };
-  const safe = (value: string) =>
-    Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
-  const invested =
-    safe(inputs.purchase) + safe(inputs.contribution) + safe(inputs.expenses);
-  const projectedValue =
-    safe(inputs.future) *
-    (scenario === '보수적' ? 0.8 : scenario === '낙관적' ? 1.15 : 1);
-  const profit = projectedValue - invested;
-  const returnRate = invested ? (profit / invested) * 100 : 0;
+  const toggleFavorite = () => router.push('/account');
+  const { invested, projectedValue, profit, returnRate } = calculateAmounts(
+    inputs,
+    scenario,
+  );
   const pageTitles: Record<string, string> = {
     areas: '지역 탐색',
     detail: '구역 상세 분석',
@@ -145,7 +111,6 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
           title={pageTitles[page] ?? '정비ON AI'}
           onBack={() => navigate(page === 'detail' ? 'areas' : 'home')}
           onNavigate={navigate}
-          unread={notices.filter((n) => !n.read).length}
         />
         <nav className="desktop-nav" aria-label="PC 주요 메뉴">
           {menu.map(({ Icon, label, id }) => (
@@ -162,46 +127,12 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
         <main id="main">
           {page === 'home' && (
             <>
-              <HomePage
-                favorites={favorites}
-                onNavigate={navigate}
-                onOpenZone={openZone}
-              />
+              <DashboardHome />
               <ListingResources />
             </>
           )}
-          {page === 'favorites' && (
-            <>
-              <div className="live-account-link">
-                <strong>회원별 관심지역 저장</strong>
-                <Link href="/account">이메일 계정으로 관리하기 →</Link>
-                <small>
-                  아래 구역 찜·알림은 원본 디자인의 시연 상태입니다.
-                </small>
-              </div>
-              <FavoritesPage
-                tab={favoriteTab}
-                setTab={setFavoriteTab}
-                favorites={favorites}
-                recent={recent}
-                notices={notices}
-                onOpenZone={openZone}
-                onNavigate={navigate}
-                onToggleFavorite={toggleFavorite}
-                onMarkRead={markRead}
-                onMarkAll={markAll}
-                onOpenNotice={pageForNotice}
-              />
-            </>
-          )}
-          {page === 'alerts' && (
-            <AlertsPage
-              notices={notices}
-              onMarkRead={markRead}
-              onMarkAll={markAll}
-              onOpenNotice={pageForNotice}
-            />
-          )}
+          {page === 'favorites' && <PersonalRegions variant="favorites" />}
+          {page === 'alerts' && <PersonalRegions variant="alerts" />}
           {page === 'analysis' && (
             <AnalysisPage
               scenario={scenario}
@@ -215,14 +146,10 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
               profit={profit}
               returnRate={returnRate}
               onOpenZone={() => openZone('u')}
-              onReset={() =>
-                setInputs({
-                  purchase: '38000',
-                  contribution: '12000',
-                  expenses: '3000',
-                  future: '65000',
-                })
-              }
+              onReset={() => {
+                setInputs(emptyAmounts());
+                setScenario('기준');
+              }}
             />
           )}
           {page === 'my' && (

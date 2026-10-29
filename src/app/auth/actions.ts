@@ -100,3 +100,57 @@ export async function signOut() {
   store.delete('jeongbi_auth_return');
   redirect('/?signed_out=1');
 }
+
+export async function startKakao(
+  _state: AuthState,
+  form: FormData,
+): Promise<AuthState> {
+  const next = safeReturnTo(form.get('next'), '/');
+  const client = await createAuthClient();
+  if (!client)
+    return {
+      success: false,
+      message:
+        '카카오 인증 서비스 설정이 필요합니다. 이메일 로그인 또는 공개자료 검색을 이용해 주세요.',
+    };
+  const store = await cookies();
+  store.set('jeongbi_auth_return', next, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 3600,
+  });
+  let target: string | null = null;
+  try {
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider: 'kakao',
+      options: {
+        redirectTo:
+          PRODUCTION_ORIGIN + '/auth/callback?next=' + encodeURIComponent(next),
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error || !data.url)
+      return {
+        success: false,
+        message:
+          '카카오 인증을 시작하지 못했습니다. 제공업체 설정을 확인한 후 다시 시도해 주세요.',
+      };
+    const url = new URL(data.url);
+    const authOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).origin;
+    if (
+      url.protocol !== 'https:' ||
+      url.origin !== authOrigin ||
+      url.pathname !== '/auth/v1/authorize'
+    )
+      return { success: false, message: '허용되지 않은 인증 주소입니다.' };
+    target = url.href;
+  } catch {
+    return {
+      success: false,
+      message: '카카오 인증 서버에 연결하지 못했습니다. 다시 시도해 주세요.',
+    };
+  }
+  redirect(target);
+}

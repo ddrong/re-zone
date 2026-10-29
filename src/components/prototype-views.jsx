@@ -28,7 +28,10 @@ import {
 } from 'lucide-react';
 import { zones, stages, listings } from '@/lib/prototype-data';
 import { districts as busanDistricts } from '@/lib/regions';
-const formatNumber = (value) => Math.round(value || 0).toLocaleString('ko-KR');
+const formatNumber = (value) =>
+  value === null || value === undefined
+    ? '—'
+    : Math.round(value).toLocaleString('ko-KR');
 function Section({ title, action, children, className = '' }) {
   return (
     <section className={`section ${className}`}>
@@ -110,7 +113,7 @@ export function HomePage({ favorites, onNavigate, onOpenZone }) {
       </section>
 
       <Section
-        title="내 관심지역 새 소식 · 데모 알림"
+        title="내 관심지역 새 소식 · 예시"
         action={
           <button className="text-action" onClick={() => onNavigate('alerts')}>
             전체 보기 <ChevronRight size={16} />
@@ -276,9 +279,7 @@ function ListingCard({ listing, onOpen }) {
         <Building2 size={35} />
       </span>
       <span className="listing-copy">
-        <span className="listing-demo-label">
-          시연용 가상 매물 — 실제 거래 불가
-        </span>
+        <span className="listing-demo-label">예시</span>
         <Pill tone={listing.kind === '경매' ? 'blue' : 'mint'}>
           {listing.kind === '경매' ? '신규 경매' : '신규 매매'}
         </Pill>
@@ -292,6 +293,8 @@ function ListingCard({ listing, onOpen }) {
 }
 
 export function AreasPage({
+  onSearch,
+  suggestions,
   areaType,
   setAreaType,
   search,
@@ -326,21 +329,41 @@ export function AreasPage({
           </button>
         ))}
       </div>
-      <label className="search-box">
+      <form
+        className="search-box"
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSearch?.();
+        }}
+      >
         <Search size={19} />
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           maxLength={80}
+          list="official-zone-suggestions"
           aria-label="지역명 또는 구역명 검색"
           placeholder="지역명 또는 구역명 검색"
         />
         {search && (
-          <button onClick={() => setSearch('')} aria-label="검색어 지우기">
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            aria-label="검색어 지우기"
+          >
             <X size={17} />
           </button>
         )}
-      </label>
+        <button type="submit" className="search-submit">
+          검색
+        </button>
+        <datalist id="official-zone-suggestions">
+          {(suggestions ?? []).map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+      </form>
 
       {mapPanel}
 
@@ -393,10 +416,15 @@ function ZoneCard({ zone, favorite, onToggleFavorite, onOpen }) {
       <div className="zone-card-head">
         <button className="zone-title-button" onClick={onOpen}>
           <Pill>{zone.type}</Pill>
-          <strong>{zone.name}</strong>
+          <strong>
+            {zone.name}{' '}
+            {zone.demo !== false && <small className="demo-inline">예시</small>}
+          </strong>
           <small>
             <MapPin size={13} />{' '}
-            {zone.demo === false ? zone.district : '부산 ' + zone.district}
+            {zone.demo === false
+              ? zone.address || zone.district
+              : '부산 ' + zone.district}
           </small>
         </button>
         <button
@@ -540,8 +568,7 @@ export function DetailPage({ zone, isFavorite, onToggleFavorite, onNavigate }) {
           </div>
         )}
         <p className="tiny-note">
-          시연용 가상 매물 — 실제 거래 불가. 표시된 가격은 거래·경매 자료가
-          아닙니다.
+          예시. 표시된 가격은 거래·경매 자료가 아닙니다.
         </p>
       </Section>
 
@@ -739,7 +766,7 @@ export function AlertsPage({ notices, onMarkRead, onMarkAll, onOpenNotice }) {
             onClick={() => onOpenNotice(notice.id)}
           >
             <strong>
-              <span className="demo-inline">데모 알림</span> {notice.title}
+              <span className="demo-inline">예시</span> {notice.title}
             </strong>
             <span>{notice.description}</span>
             <small>{notice.date}</small>
@@ -811,8 +838,8 @@ export function AnalysisPage({
           <Building2 size={19} />
         </span>
         <button onClick={onOpenZone}>
-          <strong>해운대구 우동2구역</strong>
-          <small>시연용 분석 대상 · 구역 상세 보기</small>
+          <strong>직접 입력하는 손익 계산</strong>
+          <small>구역 예시 보기 · 가격은 자동 입력하지 않습니다.</small>
         </button>
         <ChevronRight size={18} />
       </div>
@@ -886,7 +913,7 @@ export function AnalysisPage({
             <small>단순 수익률</small>
             <strong className={returnRate >= 0 ? 'positive' : 'negative'}>
               {returnRate > 0 ? '+' : ''}
-              {returnRate.toFixed(1)}
+              {returnRate === null ? '—' : returnRate.toFixed(1)}
               <i>%</i>
             </strong>
           </div>
@@ -913,7 +940,8 @@ export function AnalysisPage({
                   aria-label={`${label} 만원`}
                   type="number"
                   min="0"
-                  step="100"
+                  step="0.01"
+                  max="1000000000"
                   inputMode="numeric"
                   value={inputs[key]}
                   onChange={(event) => updateInput(key, event.target.value)}
@@ -999,7 +1027,7 @@ export function MyPage({
         <div>
           <span className="eyebrow">정비ON과 함께</span>
           <h2>나의 정비ON</h2>
-          <p>계정 상태는 아래 이메일 연결에서 확인하세요.</p>
+          <p>로그인 상태와 관심지역을 관리하세요.</p>
         </div>
         <Pill tone="blue">MY</Pill>
       </section>

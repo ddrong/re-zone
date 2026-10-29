@@ -70,7 +70,9 @@ export function KakaoMap({
   selectedId?: string;
   onSelect?: (id: string) => void;
 }) {
-  const key = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+  const key =
+    process.env.NEXT_PUBLIC_KAKAO_MAP_JS_KEY ||
+    process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
   const node = useRef<HTMLDivElement>(null);
   const instance = useRef<MapInstance | null>(null);
   const addressCache = useRef(new Map<string, Promise<GeoResult | null>>());
@@ -81,17 +83,17 @@ export function KakaoMap({
   useEffect(() => {
     selection.current = onSelect;
   }, [onSelect]);
+  useEffect(() => {
+    if (!key || ready || failed) return;
+    const timeout = setTimeout(() => setFailed(true), 15000);
+    return () => clearTimeout(timeout);
+  }, [key, ready, failed]);
   const selected = zones.find((z) => z.id === selectedId);
   const searchAddress = selected ? verifiedMapAddress(selected) : null;
   const locationQuery = searchAddress || '부산광역시 ' + district;
   useEffect(() => {
     if (!ready || !node.current || !window.kakao) return;
-    const maps = window.kakao.maps;
-    if (!instance.current)
-      instance.current = new maps.Map(node.current, {
-        center: new maps.LatLng(35.1796, 129.0756),
-        level: 9,
-      });
+    if (!instance.current) return;
     const map = instance.current;
     const observer = new ResizeObserver(() => map.relayout());
     observer.observe(node.current);
@@ -214,8 +216,29 @@ export function KakaoMap({
           }
           strategy="afterInteractive"
           onReady={() => {
-            if (window.kakao) window.kakao.maps.load(() => setReady(true));
-            else setFailed(true);
+            try {
+              if (window.kakao)
+                window.kakao.maps.load(() => {
+                  try {
+                    const maps = window.kakao?.maps;
+                    if (!maps || !node.current) {
+                      setFailed(true);
+                      return;
+                    }
+                    if (!instance.current)
+                      instance.current = new maps.Map(node.current, {
+                        center: new maps.LatLng(35.1796, 129.0756),
+                        level: 9,
+                      });
+                    setReady(true);
+                  } catch {
+                    setFailed(true);
+                  }
+                });
+              else setFailed(true);
+            } catch {
+              setFailed(true);
+            }
           }}
           onError={() => setFailed(true)}
         />

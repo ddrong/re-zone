@@ -100,49 +100,122 @@ async function officialFetch(url: URL) {
   if (body.length > 1500000) throw new Error('SOURCE_TOO_LARGE');
   return body;
 }
+
+type Catalog = { zones: PublicZone[]; partial: boolean; retrievedAt: string };
+let catalog: Catalog | null = null;
+let catalogExpires = 0;
+let pendingCatalog: Promise<Catalog> | null = null;
+export function lastOfficialSuccess() {
+  return catalog?.retrievedAt ?? null;
+}
+async function loadCatalog(): Promise<Catalog> {
+  if (catalog && Date.now() < catalogExpires) return catalog;
+  if (pendingCatalog) return pendingCatalog;
+  pendingCatalog = (async () => {
+    const types = ['재개발', '재건축'];
+    const results = await Promise.allSettled(
+      types.map(async (kind) => {
+        const rows: PublicZone[] = [];
+        let more = true;
+        for (let page = 1; more && page <= 40; page++) {
+          const url = new URL('/view.do', ORIGIN);
+          url.searchParams.set('no', kind === '재건축' ? '274' : '273');
+          url.searchParams.set('pageIndex', String(page));
+          const parsed = parseOfficialList(
+            await officialFetch(url),
+            kind,
+            '',
+            page,
+          );
+          rows.push(...parsed.rows);
+          more = parsed.hasMore;
+        }
+        return { rows, truncated: more };
+      }),
+    );
+    const ok = results.flatMap((r) =>
+      r.status === 'fulfilled' ? [r.value] : [],
+    );
+    if (!ok.length) throw new Error('SOURCE_UNAVAILABLE');
+    const zones = [
+      ...new Map(ok.flatMap((r) => r.rows).map((z) => [z.id, z])).values(),
+    ];
+    const next = {
+      zones,
+      partial: ok.length !== types.length || ok.some((r) => r.truncated),
+      retrievedAt: new Date().toISOString(),
+    };
+    catalog = next;
+    catalogExpires = Date.now() + (next.partial ? 60_000 : 3_600_000);
+    return next;
+  })();
+  try {
+    return await pendingCatalog;
+  } finally {
+    pendingCatalog = null;
+  }
+}
+export function filterOfficialZones(
+  zones: PublicZone[],
+  {
+    q = '',
+    district = '',
+    type = '',
+    stage = '',
+  }: { q?: string; district?: string; type?: string; stage?: string },
+) {
+  const normalize = (v: string) => v.toLowerCase().replace(/\s+/g, '');
+  const tokens = q.trim().split(/\s+/).filter(Boolean).map(normalize);
+  const chosen = districts.find((d) => d.code === district);
+  return zones.filter(
+    (z) =>
+      (!type || z.type === type) &&
+      (!chosen || z.district === chosen.name) &&
+      (!stage || String(z.stage) === stage) &&
+      tokens.every((t) =>
+        normalize(
+          z.name + (z.address ?? '') + z.district + z.type + z.stageName,
+        ).includes(t),
+      ),
+  );
+}
 export async function searchOfficialZones({
   q = '',
   district = '',
   type = '',
+  stage = '',
   page = 1,
 }: {
   q?: string;
   district?: string;
   type?: string;
+  stage?: string;
   page?: number;
 }) {
-  const chosen = districts.find((d) => d.code === district);
-  const index = chosen ? districts.findIndex((d) => d.code === district) : -1;
-  const types = type ? [type] : ['재개발', '재건축'];
-  const results = await Promise.allSettled(
-    types.map(async (kind) => {
-      const url = new URL('/view.do', ORIGIN);
-      url.searchParams.set('no', kind === '재건축' ? '274' : '273');
-      url.searchParams.set('pageIndex', String(page));
-      if (q) url.searchParams.set('sw', q);
-      if (index >= 0)
-        url.searchParams.set(
-          'sigun_gbn_id',
-          'CMCD_' + String(263 + index).padStart(13, '0'),
-        );
-      return parseOfficialList(
-        await officialFetch(url),
-        kind,
-        chosen?.name ?? '',
-        page,
-      );
-    }),
+  const data = await loadCatalog();
+  const scope = filterOfficialZones(data.zones, { q, type, stage });
+  const filtered = filterOfficialZones(scope, { district });
+  const districtCounts = Object.fromEntries(
+    districts.map((d) => [
+      d.code,
+      scope.filter((z) => z.district === d.name).length,
+    ]),
   );
-  const fulfilled = results.flatMap((r) =>
-    r.status === 'fulfilled' ? [r.value] : [],
-  );
-  if (!fulfilled.length) throw new Error('SOURCE_UNAVAILABLE');
+  const pageSize = 20;
   return {
-    zones: fulfilled.flatMap((r) => r.rows),
-    hasMore: fulfilled.some((r) => r.hasMore),
-    partial: fulfilled.length !== results.length,
+    zones: filtered.slice((page - 1) * pageSize, page * pageSize),
+    total: filtered.length,
+    districtCounts,
+    typeCounts: Object.fromEntries(
+      ['재개발', '재건축'].map((t) => [
+        t,
+        filtered.filter((z) => z.type === t).length,
+      ]),
+    ),
+    hasMore: page * pageSize < filtered.length,
+    partial: data.partial,
     page,
-    retrievedAt: new Date().toISOString(),
+    retrievedAt: data.retrievedAt,
     source: '부산광역시 정비사업 통합홈페이지',
     sourceUrl: ORIGIN + '/view.do?no=273',
   };
@@ -161,7 +234,11 @@ export async function getOfficialZone(id: string): Promise<PublicZone | null> {
     typeof item[key] === 'string' ? text(item[key] as string) : '';
   const name = field('areaName') || field('busiAraNm');
   if (!name) return null;
-  const type = /재건축/.test(name) ? '재건축' : '재개발';
+  const type = /재건축/.test(name)
+    ? '재건축'
+    : /재개발/.test(name)
+      ? '재개발'
+      : '유형 미제공';
   const stage = field('busiProcStepName') || '단계 미제공';
   return {
     id,

@@ -10,8 +10,15 @@ export async function saveFavorite(
   form: FormData,
 ): Promise<FavoriteState> {
   const user = await getAuthUser();
-  if (!user?.email || !user.email_confirmed_at)
-    return { message: '이메일 인증 후 로그인해 주세요.', success: false };
+  if (
+    !user?.email ||
+    (!user.email_confirmed_at && user.app_metadata?.provider === 'email')
+  )
+    return {
+      message:
+        '이메일 인증 계정 또는 이메일이 제공된 카카오 계정으로 로그인해 주세요.',
+      success: false,
+    };
   const code = z
     .string()
     .regex(/^26\d{3}$/)
@@ -49,6 +56,8 @@ export async function saveFavorite(
     };
   }
   revalidatePath('/account');
+  revalidatePath('/');
+  revalidatePath('/favorites');
   return {
     message: district.name + '을(를) 관심지역에 저장했습니다.',
     success: true,
@@ -71,4 +80,28 @@ export async function removeFavorite(
   }
   revalidatePath('/account');
   return { message: '관심지역을 해제했습니다.', success: true };
+}
+
+export async function updateFavorite(
+  _state: FavoriteState,
+  form: FormData,
+): Promise<FavoriteState> {
+  const user = await getAuthUser();
+  const id = z.uuid().safeParse(form.get('id'));
+  if (!user || !id.success)
+    return { success: false, message: '로그인 상태와 요청을 확인해 주세요.' };
+  try {
+    const result = await getDb().favoriteRegion.updateMany({
+      where: { id: id.data, user: { supabaseAuthId: user.id } },
+      data: { alertsEnabled: form.get('alerts') === 'on' },
+    });
+    if (!result.count)
+      return { success: false, message: '수정할 관심지역이 없습니다.' };
+  } catch {
+    return { success: false, message: '설정을 저장하지 못했습니다.' };
+  }
+  revalidatePath('/account');
+  revalidatePath('/favorites');
+  revalidatePath('/');
+  return { success: true, message: '관심지역 알림 설정을 저장했습니다.' };
 }

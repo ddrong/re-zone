@@ -1,7 +1,7 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Bell, ChevronLeft, Search } from 'lucide-react';
 import { BrandLink } from './brand-link';
 import { SessionControls } from './session-controls';
@@ -32,14 +32,41 @@ export function AppHeader({
   title,
   onBack,
   onNavigate,
-  unread,
 }: {
   page: string;
   title: string;
   onBack: () => void;
   onNavigate: (page: string) => void;
-  unread: number;
 }) {
+  const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    const refresh = async () => {
+      try {
+        const r = await fetch('/api/account', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        const d = await r.json();
+        if (!controller.signal.aborted)
+          setUnread(r.ok && d.authenticated && d.ready ? (d.unread ?? 0) : 0);
+      } catch {
+        if (!controller.signal.aborted) setUnread(0);
+      }
+    };
+    void refresh();
+    const visible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', visible);
+    window.addEventListener('jeongbi-account-changed', refresh);
+    return () => {
+      controller.abort();
+      document.removeEventListener('visibilitychange', visible);
+      window.removeEventListener('jeongbi-account-changed', refresh);
+    };
+  }, [pathname]);
   return (
     <header className="topbar">
       <div className="header-brand-group">
@@ -71,7 +98,7 @@ export function AppHeader({
         <button
           className="icon-button notice-button"
           onClick={() => onNavigate('alerts')}
-          aria-label="데모 알림"
+          aria-label="새 소식"
         >
           <Bell />
           {unread > 0 && <span className="unread-badge">{unread}</span>}

@@ -1,6 +1,10 @@
 'use client';
-import { useActionState } from 'react';
-import { saveFavorite, removeFavorite } from '@/app/account/actions';
+import { useActionState, useEffect } from 'react';
+import {
+  saveFavorite,
+  removeFavorite,
+  updateFavorite,
+} from '@/app/account/actions';
 import { districts } from '@/lib/regions';
 export function FavoriteForm({
   selected,
@@ -13,6 +17,10 @@ export function FavoriteForm({
     message: '',
     success: false,
   });
+  useEffect(() => {
+    if (state.success)
+      window.dispatchEvent(new Event('jeongbi-account-changed'));
+  }, [state]);
   return (
     <form action={action} className="favorite-form">
       <label htmlFor="district">관심 구·군 추가</label>
@@ -57,6 +65,36 @@ export function RemoveFavorite({ id }: { id: string }) {
       <p role="status" className="small">
         {state.message}
       </p>
+    </form>
+  );
+}
+
+export function FavoriteSettings({
+  id,
+  enabled,
+}: {
+  id: string;
+  enabled: boolean;
+}) {
+  const [state, action, pending] = useActionState(updateFavorite, {
+    message: '',
+    success: false,
+  });
+  useEffect(() => {
+    if (state.success)
+      window.dispatchEvent(new Event('jeongbi-account-changed'));
+  }, [state]);
+  return (
+    <form action={action}>
+      <input type="hidden" name="id" value={id} />
+      <label>
+        <input type="checkbox" name="alerts" defaultChecked={enabled} />
+        관심지역 알림 수신
+      </label>
+      <button className="button-secondary" disabled={pending}>
+        {pending ? '저장 중…' : '설정 저장'}
+      </button>
+      <p role="status">{state.message}</p>
     </form>
   );
 }

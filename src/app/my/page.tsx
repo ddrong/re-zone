@@ -26,8 +26,12 @@ async function AccountConnection({ searchParams }: { searchParams: Params }) {
       )}
       {user ? (
         <>
-          <strong>이메일 연결됨</strong>
-          <p>{user.email}</p>
+          <strong>
+            {user.app_metadata?.provider === 'kakao'
+              ? '카카오 로그인됨'
+              : '이메일 연결됨'}
+          </strong>
+          <p>{user.email || '이메일 미제공 카카오 계정'}</p>
           <Link className="button-primary" href="/account">
             회원별 관심지역 관리
           </Link>

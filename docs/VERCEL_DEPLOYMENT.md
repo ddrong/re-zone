@@ -22,12 +22,12 @@ DB 기능이 있다면 [로컬 연결과 읽기·쓰기 확인](SUPABASE_SETUP.m
 1. 내 프로젝트의 GitHub 저장소를 Vercel에서 가져옵니다. GitHub 연결 시 필요한 저장소만 선택하고 요청되는 접근 권한을 확인하세요.
 2. Framework Preset은 **Next.js**, Node.js는 **24**를 선택합니다.
 3. Root Directory는 package.json이 있는 실제 프로젝트 위치로 설정합니다. 저장소 루트가 프로젝트라면 기본값을 사용하고, 상위 폴더까지 저장했다면 해당 하위 폴더를 지정합니다. 폴더 이름을 고정값으로 가정하지 마세요.
-4. Install Command는 **npm ci**, Build Command는 **npm run check && npm run build**로 설정합니다.
+4. Install Command는 **npm ci**, Build Command는 **npm run typecheck && npm run lint && npm run build**로 설정합니다.
 5. 설정을 저장하고 다음 환경 변수·DB 준비 사항을 확인한 뒤 배포합니다.
 
 기존 Vercel 프로젝트는 **Settings → Build and Deployment → Build Command**에서 명령을 지정합니다. 화면에 Override 선택이 있으면 켜고 입력하세요. 설정 변경은 다음 배포부터 반영됩니다. [Vercel 빌드 설정 공식 안내](https://vercel.com/docs/builds/configure-a-build#build-command)
 
-npm run check가 실패하면 && 뒤의 빌드는 실행되지 않습니다. 실패한 단계는 해당 배포 화면의 빌드 로그에서 확인하세요. npm run build 자체는 Prisma Client 생성과 Next.js 빌드를 수행하며, 마이그레이션은 실행하지 않습니다.
+현재 정비ON AI는 루트 vercel.json의 buildCommand로 대시보드 빌드 명령을 덮어씁니다. 기존 파일의 서식 경고가 배포를 막지 않도록 타입 검사·ESLint·빌드를 순서대로 실행합니다. 로컬 npm run check와 서식 검사는 유지하며, 타입·린트가 실패하면 다음 단계는 실행되지 않습니다. 실패한 단계는 해당 배포 화면의 빌드 로그에서 확인하세요. npm run build 자체는 Prisma Client 생성과 Next.js 빌드를 수행하며, 마이그레이션은 실행하지 않습니다.
 
 GitHub Actions는 필요할 때만 [선택 안내서](GITHUB_ACTIONS.md)를 따라 추가합니다. 기본 배포 과정에 필수인 기능은 아닙니다.
 

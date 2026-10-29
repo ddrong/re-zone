@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AreasPage } from './prototype-views';
 import { usePrototype } from './prototype-shell';
 import { KakaoMap } from './kakao-map';
@@ -12,8 +13,11 @@ type Result = {
   partial: boolean;
   retrievedAt: string;
   sourceUrl: string;
+  total: number;
+  districtCounts: Record<string, number>;
 };
 export function PublicExplorer({
+  initialStage = '',
   initialDistrict = '',
   initialResult = null,
   initialQuery = '',
@@ -21,6 +25,7 @@ export function PublicExplorer({
   initialPage = 1,
   initialMode = 'official',
 }: {
+  initialStage?: string;
   initialDistrict?: string;
   initialResult?: Result | null;
   initialQuery?: string;
@@ -28,6 +33,10 @@ export function PublicExplorer({
   initialPage?: number;
   initialMode?: string;
 }) {
+  const [stage, setStage] = useState(initialStage);
+  const [lastSuccess, setLastSuccess] = useState(
+    initialResult?.retrievedAt ?? '',
+  );
   const [mode, setMode] = useState(initialMode);
   const [type, setType] = useState(initialType);
   const [search, setSearch] = useState(initialQuery);
@@ -41,8 +50,10 @@ export function PublicExplorer({
   const [retry, setRetry] = useState(0);
   const [selectedId, setSelectedId] = useState('');
   const ctx = usePrototype();
+  const router = useRouter();
   useEffect(() => {
     const query = new URLSearchParams();
+    if (stage) query.set('stage', stage);
     if (search) query.set('q', search);
     const code = districts.find((d) => d.name === district)?.code;
     if (code) query.set('district', code);
@@ -57,7 +68,7 @@ export function PublicExplorer({
       window.location.pathname + window.location.search !== target
     )
       window.history.replaceState(null, '', target);
-  }, [mode, type, search, district, page]);
+  }, [mode, type, search, district, page, stage]);
   useEffect(() => {
     if (mode !== 'official') return;
     const controller = new AbortController();
@@ -66,6 +77,7 @@ export function PublicExplorer({
       setError('');
       const query = new URLSearchParams({
         q: search,
+        stage,
         type: type === '전체' ? '' : type,
         district: districts.find((d) => d.name === district)?.code ?? '',
         page: String(page),
@@ -74,8 +86,13 @@ export function PublicExplorer({
         const response = await fetch('/api/public-zones?' + query, {
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error('SOURCE_UNAVAILABLE');
-        setResult(await response.json());
+        const data = await response.json();
+        if (!response.ok) {
+          if (data.lastSuccessAt) setLastSuccess(data.lastSuccessAt);
+          throw new Error('SOURCE_UNAVAILABLE');
+        }
+        setResult(data);
+        setLastSuccess(data.retrievedAt);
       } catch {
         if (!controller.signal.aborted) {
           setResult(null);
@@ -91,7 +108,7 @@ export function PublicExplorer({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [mode, type, search, district, page, retry]);
+  }, [mode, type, search, district, page, stage, retry]);
   const demo = zones.filter(
     (z) =>
       (type === '전체' || z.type === type) &&
@@ -99,19 +116,7 @@ export function PublicExplorer({
       (z.name + ' ' + z.district).includes(search.trim()),
   );
   const visible = mode === 'official' ? (result?.zones ?? []) : demo;
-  const openZone = (id: string) => {
-    if (mode === 'demo') {
-      ctx.openZone(id);
-      return;
-    }
-    setSelectedId(id);
-    document.getElementById('region-map')?.scrollIntoView({
-      block: 'center',
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ? 'instant'
-        : 'smooth',
-    });
-  };
+  const openZone = (id: string) => ctx.openZone(id);
   return (
     <div className="explorer-workspace">
       <div className="data-mode-switch" role="group" aria-label="자료 구분">
@@ -145,7 +150,7 @@ export function PublicExplorer({
               {loading
                 ? '부산시 자료를 조회 중입니다…'
                 : error ||
-                  '전체 건수가 아닌 현재 페이지의 공식 조회 결과입니다.'}
+                  `검색 결과 ${result?.total ?? 0}곳 · 현재 페이지 ${result?.zones.length ?? 0}곳`}
             </span>
             {error && (
               <button
@@ -154,6 +159,16 @@ export function PublicExplorer({
               >
                 다시 조회
               </button>
+            )}
+            {error && (
+              <small>
+                최종 성공 조회:{' '}
+                {lastSuccess
+                  ? new Date(lastSuccess).toLocaleString('ko-KR', {
+                      timeZone: 'Asia/Seoul',
+                    })
+                  : '기록 없음'}
+              </small>
             )}
             {result?.partial && (
               <span>일부 사업유형의 조회가 실패했습니다.</span>
@@ -185,7 +200,40 @@ export function PublicExplorer({
           </>
         )}
       </div>
+      <div className="stage-search-filter">
+        <label htmlFor="stage-filter">추진 단계</label>
+        <select
+          id="stage-filter"
+          value={stage}
+          onChange={(e) => {
+            setStage(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">전체 단계</option>
+          {[
+            '미확정',
+            '기본계획',
+            '구역 지정',
+            '추진위원회',
+            '조합 설립',
+            '사업시행',
+            '관리처분',
+            '이주·철거',
+            '착공·준공',
+          ].map((name, i) => (
+            <option key={i} value={i}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
       <AreasPage
+        onSearch={() => {
+          setPage(1);
+          setRetry((n) => n + 1);
+        }}
+        suggestions={(result?.zones ?? []).map((z) => z.name)}
         areaType={type}
         setAreaType={(v: string) => {
           setType(v);
@@ -206,7 +254,8 @@ export function PublicExplorer({
         onToggleFavorite={(id: string) => {
           const zone = visible.find((z) => z.id === id);
           if (zone && !zone.demo) {
-            ctx.navigate('account');
+            const code = districts.find((d) => d.name === zone.district)?.code;
+            router.push('/account' + (code ? '?district=' + code : ''));
             return;
           }
           ctx.toggleFavorite(id);
@@ -225,6 +274,21 @@ export function PublicExplorer({
           </div>
         }
       />
+      {mode === 'official' && result && (
+        <div className="regional-counts" aria-label="검색 조건별 지역 건수">
+          {districts.map((d) => (
+            <button
+              key={d.code}
+              onClick={() => {
+                setDistrict(d.name);
+                setPage(1);
+              }}
+            >
+              {d.name} {result.districtCounts?.[d.code] ?? 0}
+            </button>
+          ))}
+        </div>
+      )}
       {mode === 'official' && (
         <div className="public-pagination">
           <button
