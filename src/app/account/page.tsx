@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LoginLink } from '@/components/login-link';
 import { Suspense } from 'react';
 import { connection } from 'next/server';
 import { getAuthUser } from '@/lib/supabase';
@@ -38,9 +39,7 @@ async function Content({
           정비사업 정보는 로그인 없이 열람할 수 있어요.
         </p>
         <div className="button-group">
-          <Link className="button primary" href="/login">
-            로그인
-          </Link>
+          <LoginLink className="button primary">로그인</LoginLink>
           <Link className="button secondary" href="/">
             사업 둘러보기
           </Link>

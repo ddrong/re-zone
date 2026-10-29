@@ -2,18 +2,22 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { authenticate } from '@/app/auth/actions';
+import { safeReturnTo } from '@/lib/auth-navigation';
 export function AuthForm({
   mode,
   configured,
+  next = '/areas',
 }: {
   mode: 'login' | 'signup';
   configured: boolean;
+  next?: string;
 }) {
   const [state, action, pending] = useActionState(
     authenticate.bind(null, mode),
     { message: '', success: false },
   );
   const signup = mode === 'signup';
+  const target = safeReturnTo(next);
   return (
     <form action={action} className="auth-form">
       {!configured && (
@@ -22,6 +26,7 @@ export function AuthForm({
           있습니다.
         </p>
       )}
+      <input type="hidden" name="next" value={target} />
       <label htmlFor="email">이메일</label>
       <input
         id="email"
@@ -40,15 +45,16 @@ export function AuthForm({
         type="password"
         autoComplete={signup ? 'new-password' : 'current-password'}
         required
-        minLength={8}
+        minLength={signup ? 8 : 1}
         maxLength={128}
-        placeholder="8자 이상 입력해 주세요"
+        placeholder={
+          signup ? '8자 이상 입력해 주세요' : '비밀번호를 입력해 주세요'
+        }
         disabled={!configured || pending}
       />
       {signup && (
         <p className="muted small">
-          이메일 확인 후 로그인할 수 있습니다. 비밀번호는 정비ON AI 프로필에
-          저장하지 않습니다.
+          새 인증 메일을 확인해 주세요. 인증 후 원래 페이지로 돌아옵니다.
         </p>
       )}
       <p
@@ -63,10 +69,19 @@ export function AuthForm({
       </button>
       <p className="center small">
         {signup ? '이미 계정이 있나요? ' : '아직 계정이 없나요? '}
-        <Link href={signup ? '/login' : '/signup'}>
+        <Link
+          href={
+            (signup ? '/login' : '/signup') +
+            '?next=' +
+            encodeURIComponent(target)
+          }
+        >
           {signup ? '로그인' : '회원가입'}
         </Link>
       </p>
+      <Link className="auth-back-link" href={target}>
+        보고 있던 페이지로 돌아가기
+      </Link>
     </form>
   );
 }

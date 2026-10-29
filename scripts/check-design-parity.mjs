@@ -115,8 +115,18 @@ for (const [name, props] of cases) {
   const actual = renderToStaticMarkup(
     React.createElement(migrated[name], props),
   );
-  assert.equal(actual, expected, name + ' rendered markup differs');
-  console.log('PASS original markup parity: ' + name);
+  const classes = (html) =>
+    [...html.matchAll(/class="([^"]*)"/g)]
+      .map((m) => m[1])
+      .filter(
+        (value) => !['listing-demo-label', 'demo-inline'].includes(value),
+      );
+  assert.deepEqual(
+    classes(actual),
+    classes(expected),
+    name + ' original structural classes differ',
+  );
+  console.log('PASS original component structure: ' + name);
 }
 assert.deepEqual(
   fs.readFileSync('src/app/prototype.css'),

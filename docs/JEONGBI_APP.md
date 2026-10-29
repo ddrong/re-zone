@@ -25,17 +25,9 @@ Node.js 24.x에서 npm run dev로 실행한다.
 
 ## 이메일 인증 설정
 
-1. Supabase Authentication에서 이메일 인증을 활성화하고 이메일 확인을 유지한다.
-2. URL Configuration의 Site URL을 실제 앱 주소로 설정한다.
-3. 로컬·배포 URL의 /auth/confirm, /auth/callback 경로를 허용 목록에 등록한다.
-4. Confirm signup 이메일 템플릿의 링크는 다음 형태로 설정한다.
-
-`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
-
-5. 실제 공개 전 SMTP, 요청 제한, CAPTCHA와 비밀번호 복구 정책을 점검한다.
-6. 이메일 인증 ID로 앱 프로필을 연결한다. 이메일만 같은 기존 회원은 자동 병합하지 않는다.
-
-회원가입·관심지역 저장은 실제 서비스 쓰기 동작이다. 실제 DB 적용 승인 전에는 회원 생성·저장 테스트를 하지 않는다.
+운영 Site URL·Redirect URLs·인증 메일 템플릿은 [운영 수정 안내](RELEASE_FIXES.md)의 설정을 따른다.
+기존 localhost 인증 메일은 새 설정으로 자동 변경되지 않으므로 저장·재배포 후 새 인증 메일로 확인한다.
+회원가입·관심지역 저장은 실제 쓰기 동작이며 승인 없이 테스트 계정이나 DB 데이터를 만들지 않는다.
 
 ## DB 적용 승인 대기
 

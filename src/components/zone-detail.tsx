@@ -1,5 +1,7 @@
 'use client';
 import { DetailPage } from './prototype-views';
+import { KakaoMap } from './kakao-map';
+import { ListingResources } from './listing-resources';
 import { usePrototype } from './prototype-shell';
 import type { PublicZone } from '@/lib/public-zones';
 export function ZoneDetail({ zone }: { zone: PublicZone }) {
@@ -26,12 +28,20 @@ export function ZoneDetail({ zone }: { zone: PublicZone }) {
           </a>
         </section>
       )}
+      {!zone.demo && (
+        <KakaoMap
+          zones={[zone]}
+          district={zone.district}
+          selectedId={zone.id}
+        />
+      )}
       <DetailPage
         zone={zone}
         isFavorite={zone.demo && ctx.favorites.includes(zone.id)}
         onToggleFavorite={toggle}
         onNavigate={ctx.navigate}
       />
+      <ListingResources />
     </>
   );
 }

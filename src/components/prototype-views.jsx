@@ -110,7 +110,7 @@ export function HomePage({ favorites, onNavigate, onOpenZone }) {
       </section>
 
       <Section
-        title="내 관심지역 새 소식"
+        title="내 관심지역 새 소식 · 데모 알림"
         action={
           <button className="text-action" onClick={() => onNavigate('alerts')}>
             전체 보기 <ChevronRight size={16} />
@@ -276,6 +276,9 @@ function ListingCard({ listing, onOpen }) {
         <Building2 size={35} />
       </span>
       <span className="listing-copy">
+        <span className="listing-demo-label">
+          시연용 가상 매물 — 실제 거래 불가
+        </span>
         <Pill tone={listing.kind === '경매' ? 'blue' : 'mint'}>
           {listing.kind === '경매' ? '신규 경매' : '신규 매매'}
         </Pill>
@@ -301,10 +304,11 @@ export function AreasPage({
   onOpenZone,
   official = false,
   loading = false,
+  mapPanel,
 }) {
   const districts = ['전체', ...busanDistricts.map((d) => d.name)];
   return (
-    <>
+    <div className="areas-layout" data-source={official ? 'official' : 'demo'}>
       <div
         className="segmented-control"
         role="tablist"
@@ -338,31 +342,7 @@ export function AreasPage({
         )}
       </label>
 
-      <section className="map-card" aria-label="부산 지역 선택">
-        <div className="map-river" />
-        <div className="map-road road-one" />
-        <div className="map-road road-two" />
-        <div className="map-header">
-          <MapPin size={18} />
-          <span>부산시 전체</span>
-          <small>{official ? '지역 선택 안내' : '시연용 지역 안내'}</small>
-        </div>
-        {['해운대구', '수영구', '부산진구'].map((district, index) => (
-          <button
-            key={district}
-            className={`map-pin pin-${index} ${districtFilter === district ? 'chosen' : ''}`}
-            onClick={() =>
-              setDistrictFilter(districtFilter === district ? '' : district)
-            }
-          >
-            {district}
-            <small>
-              {official ? '지역 선택' : [24, 18, 12][index] + '개 예시'}
-            </small>
-          </button>
-        ))}
-        <span className="map-disclaimer">실제 지도가 아닌 지역 안내 화면</span>
-      </section>
+      {mapPanel}
 
       <div className="district-filter" aria-label="지역 필터">
         {districts.map((district) => (
@@ -403,7 +383,7 @@ export function AreasPage({
           />
         )}
       </Section>
-    </>
+    </div>
   );
 }
 
@@ -560,7 +540,8 @@ export function DetailPage({ zone, isFavorite, onToggleFavorite, onNavigate }) {
           </div>
         )}
         <p className="tiny-note">
-          표시된 가격과 매물은 시연용 예시입니다. 거래·경매 자료가 아닙니다.
+          시연용 가상 매물 — 실제 거래 불가. 표시된 가격은 거래·경매 자료가
+          아닙니다.
         </p>
       </Section>
 
@@ -757,7 +738,9 @@ export function AlertsPage({ notices, onMarkRead, onMarkAll, onOpenNotice }) {
             className="alert-copy"
             onClick={() => onOpenNotice(notice.id)}
           >
-            <strong>{notice.title}</strong>
+            <strong>
+              <span className="demo-inline">데모 알림</span> {notice.title}
+            </strong>
             <span>{notice.description}</span>
             <small>{notice.date}</small>
           </button>
@@ -837,7 +820,7 @@ export function AnalysisPage({
       <section className="simulation-card">
         <div className="simulation-heading">
           <div>
-            <span className="eyebrow">가정 기반 시뮬레이션</span>
+            <span className="eyebrow">가정에 따른 시뮬레이션</span>
             <h2>지금 사면 어떨까?</h2>
           </div>
           <span className="icon-tile mint">

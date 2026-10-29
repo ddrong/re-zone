@@ -8,10 +8,6 @@ import {
   ChartNoAxesCombined,
   Heart,
   UserRound,
-  Bell,
-  Search,
-  ChevronLeft,
-  ShieldAlert,
 } from 'lucide-react';
 import {
   HomePage,
@@ -21,6 +17,8 @@ import {
   MyPage,
 } from './prototype-views';
 import { initialNotices } from '@/lib/prototype-data';
+import { AppHeader } from './app-header';
+import { ListingResources } from './listing-resources';
 type Page =
   | 'home'
   | 'areas'
@@ -142,62 +140,13 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
       value={{ favorites, recent, toggleFavorite, openZone, navigate }}
     >
       <div className="app-shell">
-        <div className="demo-banner">
-          <ShieldAlert size={13} />
-          {page === 'areas' || (page === 'detail' && pathname.includes('BARA_'))
-            ? '공식 공개자료와 시연용 정보는 별도로 표시합니다'
-            : '매물·가격·알림·손익 계산은 시연용 예시입니다'}
-        </div>
-        <header className="topbar">
-          {page === 'home' ? (
-            <button
-              className="brand"
-              onClick={() => navigate('home')}
-              aria-label="정비ON 홈"
-            >
-              정비<span>ON</span>
-            </button>
-          ) : (
-            <button
-              className="icon-button back-button"
-              onClick={() => navigate(page === 'detail' ? 'areas' : 'home')}
-              aria-label="이전 화면"
-            >
-              <ChevronLeft />
-            </button>
-          )}
-          {page !== 'home' && (
-            <h1 className="page-title">{pageTitles[page] ?? '정비ON AI'}</h1>
-          )}
-          <div className="top-actions">
-            {page === 'home' && (
-              <button
-                className="icon-button"
-                onClick={() => navigate('areas')}
-                aria-label="지역 검색"
-              >
-                <Search />
-              </button>
-            )}
-            <button
-              className="icon-button notice-button"
-              onClick={() => navigate('alerts')}
-              aria-label="시연용 새 소식"
-            >
-              <Bell />
-              <span className="unread-badge">
-                {notices.filter((n) => !n.read).length}
-              </span>
-            </button>
-            <button
-              className="icon-button"
-              onClick={() => navigate('my')}
-              aria-label="MY"
-            >
-              <UserRound />
-            </button>
-          </div>
-        </header>
+        <AppHeader
+          page={page}
+          title={pageTitles[page] ?? '정비ON AI'}
+          onBack={() => navigate(page === 'detail' ? 'areas' : 'home')}
+          onNavigate={navigate}
+          unread={notices.filter((n) => !n.read).length}
+        />
         <nav className="desktop-nav" aria-label="PC 주요 메뉴">
           {menu.map(({ Icon, label, id }) => (
             <Link
@@ -212,11 +161,14 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
         </nav>
         <main id="main">
           {page === 'home' && (
-            <HomePage
-              favorites={favorites}
-              onNavigate={navigate}
-              onOpenZone={openZone}
-            />
+            <>
+              <HomePage
+                favorites={favorites}
+                onNavigate={navigate}
+                onOpenZone={openZone}
+              />
+              <ListingResources />
+            </>
           )}
           {page === 'favorites' && (
             <>

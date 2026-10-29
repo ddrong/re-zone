@@ -8,7 +8,7 @@ prototypes/jeongbion-ui는 원본 React/Vite 프로젝트와 design-references �
 
 src/components/prototype-views.jsx는 원본 Section·Pill·StageTrack와 7개 화면 컴포넌트를 재사용한다.
 src/app/prototype.css와 public/assets/oni.png는 원본과 바이트 단위로 동일하다.
-src/app/integration.css는 인증·공식 자료 표시와 PC 탐색 메뉴만 보완한다.
+src/app/integration.css는 인증·공식 자료·카카오맵·브랜드와 1920px 반응형을 보완한다. 원본 CSS 파일 자체는 유지한다.
 모바일 하단 메뉴와 민트·딥네이비 토큰, 둥근 버튼·그림자·온이 마스코트를 유지한다.
 
 ## 화면과 인증
@@ -22,6 +22,8 @@ src/app/integration.css는 인증·공식 자료 표시와 PC 탐색 메뉴만 �
 - /account: 기존 회원별 관심지역 저장·해제.
 - /login, /signup: 기존 Supabase 인증 처리 재사용.
 - 공식 구역의 관심 버튼은 실제 회원별 관심지역 관리로 이동한다. 시연 찜과 섞어 저장하지 않는다.
+
+운영 인증 복귀·로고·폰트·카카오맵 준비와 실제 테스트 절차는 [운영 수정 안내](RELEASE_FIXES.md)를 따른다.
 
 Prisma 모델·환경변수·인증 설정은 변경하지 않는다.
 DB 적용과 인증 변수 등록은 기존 승인 절차를 따른다.
@@ -56,6 +58,6 @@ npm run lint
 npm run build
 node scripts/check-design-parity.mjs
 
-디자인 비교 검사는 원본 홈·상세·관심·알림·계산기의 시연 상태 HTML과 통합본을 비교한다.
+디자인 비교 검사는 승인된 개별 시연 안내 추가를 제외하고 원본 홈·상세·관심·알림·계산기의 구조적 클래스를 비교한다.
 원본 CSS·마스코트는 별도 바이트 비교한다. 이는 실제 브라우저 화면의 픽셀 비교와 다르다.
 브라우저 연결이 없는 경우 모바일 배치·클릭·키보드·스크린샷은 미검증으로 보고한다.

@@ -3,19 +3,27 @@ import { Suspense } from 'react';
 import { connection } from 'next/server';
 import { getAuthUser } from '@/lib/supabase';
 import { signOut } from '@/app/auth/actions';
+import { LoginLink, SignupLink } from '@/components/login-link';
 export const metadata = { title: 'MY' };
-export default function My() {
+type Params = Promise<{ notice?: string }>;
+export default function My({ searchParams }: { searchParams: Params }) {
   return (
     <Suspense fallback={<p>계정 상태 확인 중…</p>}>
-      <AccountConnection />
+      <AccountConnection searchParams={searchParams} />
     </Suspense>
   );
 }
-async function AccountConnection() {
+async function AccountConnection({ searchParams }: { searchParams: Params }) {
   await connection();
   const user = await getAuthUser();
+  const params = await searchParams;
   return (
     <div className="account-connection">
+      {params.notice === 'logout-failed' && (
+        <p role="alert" className="notice">
+          로그아웃하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.
+        </p>
+      )}
       {user ? (
         <>
           <strong>이메일 연결됨</strong>
@@ -30,12 +38,8 @@ async function AccountConnection() {
       ) : (
         <>
           <p>이메일 계정으로 로그인하고 관심지역을 저장하세요.</p>
-          <Link className="button-primary" href="/login">
-            이메일 로그인
-          </Link>
-          <Link className="button-secondary" href="/signup">
-            회원가입
-          </Link>
+          <LoginLink className="button-primary">이메일 로그인</LoginLink>
+          <SignupLink className="button-secondary" />
         </>
       )}
     </div>
