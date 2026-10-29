@@ -23,7 +23,12 @@ function load(path, aliases = {}) {
   );
   return record.exports;
 }
+const originalFixtureKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'synthetic-public-key';
+const originalFixtureUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://auth-test.example';
 const nav = load('src/lib/auth-navigation.ts');
+const authCookies = load('src/lib/auth-cookies.ts');
 for (const attack of [
   'https://evil.example',
   '//evil.example',
@@ -64,6 +69,7 @@ assert.notEqual(
 );
 const store = new Map();
 const cookieStore = {
+  getAll: () => [...store].map(([name, value]) => ({ name, value })),
   get: (key) => (store.has(key) ? { value: store.get(key) } : undefined),
   set: (key, value) => store.set(key, value),
   delete: (key) => store.delete(key),
@@ -101,6 +107,8 @@ const aliases = {
     createAuthClient: async () => (configured ? client : null),
   },
   '@/lib/auth-navigation': nav,
+  '@/lib/auth-cookies': authCookies,
+  'next/cache': { revalidatePath: () => {} },
 };
 const actions = load('src/app/auth/actions.ts', aliases);
 const form = new FormData();
@@ -310,3 +318,100 @@ assert.equal(
 console.log(
   'PASS mocked Kakao OAuth, cancellation, unsafe provider redirect rejection; calculator blank/reset, invalid amounts and manwon units',
 );
+
+const testCookies = load('src/lib/auth-cookies.ts');
+const activeKey = testCookies.authStorageKey();
+store.set(activeKey + '.0', 'synthetic-session-A');
+store.set(activeKey + '-code-verifier', 'synthetic-verifier');
+store.set('unrelated-cookie', 'keep');
+failure = null;
+await assert.rejects(
+  () => actions.signOut(),
+  (e) => e.destination === '/?signed_out=1',
+);
+assert.equal(store.get(testCookies.LOGOUT_COOKIE), '1');
+assert.equal(store.get(activeKey + '.0'), '');
+assert.equal(store.get(activeKey + '-code-verifier'), '');
+assert.equal(store.get('unrelated-cookie'), 'keep');
+assert.equal(
+  nav.safeReturnTo('/areas?q=busan&signed_out=1&notice=logout-local-only'),
+  '/areas?q=busan',
+);
+let verifiedActor = { id: 'synthetic-member-A' };
+let sdkReads = 0,
+  denyWrites = false;
+const actualStoreSet = cookieStore.set;
+cookieStore.set = (...args) => {
+  if (denyWrites) throw new Error('synthetic readonly store');
+  return actualStoreSet(...args);
+};
+const ssr = load('src/lib/supabase.ts', {
+  'server-only': {},
+  './auth-cookies': testCookies,
+  'next/headers': { cookies: async () => cookieStore },
+  '@supabase/ssr': {
+    createServerClient: (_url, _key, options) => ({
+      auth: {
+        getUser: async () => {
+          sdkReads++;
+          return { data: { user: verifiedActor }, error: null };
+        },
+        signInWithPassword: async () => {
+          options.cookies.setAll(
+            [
+              {
+                name: activeKey + '.0',
+                value: 'synthetic-new-session',
+                options: { path: '/' },
+              },
+            ],
+            {},
+          );
+          return { error: null };
+        },
+      },
+    }),
+  },
+});
+assert.equal(await ssr.getAuthUser(), null);
+assert.equal(sdkReads, 0);
+store.set(activeKey + '.0', 'synthetic-late-refresh');
+assert.equal(await ssr.getAuthUser(), null);
+const statusRoute = load('src/app/api/auth/status/route.ts', {
+  '@/lib/supabase': ssr,
+  '@/lib/auth-cookies': testCookies,
+  'next/server': { ...nodeRequire('next/server'), connection: async () => {} },
+});
+assert.equal((await (await statusRoute.GET()).json()).authenticated, false);
+assert.equal((await (await statusRoute.GET()).json()).authenticated, false);
+store.delete(testCookies.LOGOUT_COOKIE);
+verifiedActor = { id: 'synthetic-member-B' };
+assert.equal((await ssr.getAuthUser()).id, 'synthetic-member-B');
+denyWrites = true;
+const strict = await ssr.createAuthClient();
+await assert.rejects(
+  () => strict.auth.signInWithPassword(),
+  /AUTH_COOKIE_WRITE_FAILED/,
+);
+const readonly = await ssr.createAuthClient({ writable: false });
+await readonly.auth.signInWithPassword();
+denyWrites = false;
+assert.equal(testCookies.authCookieOptions().path, '/');
+assert.equal(testCookies.authCookieOptions().sameSite, 'lax');
+assert.equal(testCookies.authCookieOptions().domain, undefined);
+assert.ok(
+  testCookies.duplicateSessionNames([
+    { name: activeKey + '.0', value: 'A' },
+    { name: activeKey + '.0', value: 'B' },
+  ]),
+);
+if (originalFixtureUrl === undefined)
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+else process.env.NEXT_PUBLIC_SUPABASE_URL = originalFixtureUrl;
+console.log(
+  'PASS mocked logout cookie cleanup, late-refresh guard, repeated authenticated=false, member switch, strict cookie-write failure and canonical cookie attributes',
+);
+
+if (originalFixtureKey === undefined)
+  delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = originalFixtureKey;

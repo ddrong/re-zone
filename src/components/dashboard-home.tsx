@@ -60,8 +60,8 @@ export function DashboardHome() {
         <Image
           className="hero-oni"
           src="/assets/oni.png"
-          width={300}
-          height={300}
+          width={1122}
+          height={1402}
           alt="정비ON 마스코트 온이"
           priority
         />

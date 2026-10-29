@@ -10,8 +10,8 @@ export function BrandLink({ className = '' }: { className?: string }) {
       <Image
         src="/assets/jeongbion-logo-transparent.png"
         alt="정비ON"
-        width={464}
-        height={144}
+        width={2172}
+        height={724}
         priority
       />
     </Link>

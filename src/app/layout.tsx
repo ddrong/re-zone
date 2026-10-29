@@ -12,9 +12,36 @@ const noto = Noto_Sans_KR({
 });
 export const metadata: Metadata = {
   metadataBase: new URL('https://jeongbi-on.vercel.app'),
-  title: { default: '정비ON AI | 부산 정비사업', template: '%s | 정비ON AI' },
+  title: {
+    default: '정비ON AI | 부산 재개발·재건축 정보',
+    template: '%s | 정비ON AI',
+  },
   description:
-    '부산 정비사업 공식 공개자료와 관심지역을 확인하세요. 시연용 매물과 계산 정보는 별도로 표시합니다.',
+    '부산 정비사업 정보를 한눈에! 재개발·재건축 검색부터 관심지역 관리와 투자 수익 분석까지.',
+  openGraph: {
+    title: '정비ON AI | 부산 재개발·재건축 정보',
+    description:
+      '부산 정비사업 정보를 한눈에! 재개발·재건축 검색부터 관심지역 관리와 투자 수익 분석까지.',
+    url: 'https://jeongbi-on.vercel.app',
+    siteName: '정비ON AI',
+    type: 'website',
+    locale: 'ko_KR',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: '정비ON AI 부산 정비사업 서비스',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '정비ON AI | 부산 재개발·재건축 정보',
+    description:
+      '부산 정비사업 정보를 한눈에! 재개발·재건축 검색부터 관심지역 관리와 투자 수익 분석까지.',
+    images: ['/og-image.png'],
+  },
   icons: {
     icon: '/assets/jeongbion-app-icon.png',
     apple: '/assets/jeongbion-app-icon.png',

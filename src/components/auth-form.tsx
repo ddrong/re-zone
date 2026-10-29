@@ -27,6 +27,10 @@ export function AuthForm({
           최초 인증 시 계정이 생성됩니다. 실제 인증 시간은 달라질 수 있습니다.
         </small>
       </div>
+      <div className="auth-method-title">
+        <h2>{signup ? '이메일로 회원가입' : '이메일·비밀번호 로그인'}</h2>
+        <p>심사 계정은 안내받은 이메일을 입력해 주세요.</p>
+      </div>
       <form action={action} className="auth-form">
         {!configured && (
           <p className="notice">
