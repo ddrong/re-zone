@@ -8,29 +8,44 @@ import {
   RemoveFavorite,
   FavoriteSettings,
 } from './favorite-form';
+import {
+  ProfileForm,
+  NotificationPreferenceForm,
+  SaveOfficialZone,
+  RemoveOfficialZone,
+  OfficialZoneSettings,
+  type Preference,
+} from './account-forms';
+type FavoriteZone = {
+  id: string;
+  alertsEnabled: boolean;
+  zone: {
+    name: string;
+    externalId: string;
+    projectType: string;
+    address: string | null;
+  };
+};
 type Account = {
   authenticated: boolean;
   ready: boolean;
-  canSave?: boolean;
-  unread?: number;
   message?: string;
+  profileName: string | null;
+  preferences: Preference | null;
   favorites: {
     id: string;
     alertsEnabled: boolean;
     region: { name: string; code: string };
   }[];
-  notices: {
-    id: string;
-    title: string;
-    message: string;
-    readAt: string | null;
-    createdAt: string;
-  }[];
+  favoriteZones: FavoriteZone[];
+  notices: { id: string; title: string; message: string; createdAt: string }[];
 };
 export function PersonalRegions({
   variant = 'home',
+  externalId,
 }: {
-  variant?: 'home' | 'favorites' | 'alerts';
+  variant?: 'home' | 'favorites' | 'alerts' | 'settings' | 'zone';
+  externalId?: string;
 }) {
   const pathname = usePathname();
   const [state, setState] = useState<Account | null>(null);
@@ -42,12 +57,12 @@ export function PersonalRegions({
     const load = async () => {
       const version = ++generation;
       try {
-        const response = await fetch('/api/account', {
+        const r = await fetch('/api/account', {
           cache: 'no-store',
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error('ACCOUNT_UNAVAILABLE');
-        const data = await response.json();
+        if (!r.ok) throw new Error('ACCOUNT');
+        const data = await r.json();
         if (controller.signal.aborted || version !== generation) return;
         setState(data);
         setFailed(false);
@@ -62,29 +77,41 @@ export function PersonalRegions({
       setState(null);
       void load();
     };
-    void load();
-    window.addEventListener('jeongbi-account-changed', refresh);
     const visible = () => {
       if (document.visibilityState === 'visible') refresh();
     };
+    void load();
+    window.addEventListener('jeongbi-account-changed', refresh);
+    window.addEventListener('jeongbi-auth-state', refresh);
+    window.addEventListener('pageshow', refresh);
     document.addEventListener('visibilitychange', visible);
     return () => {
       controller.abort();
       window.removeEventListener('jeongbi-account-changed', refresh);
+      window.removeEventListener('jeongbi-auth-state', refresh);
+      window.removeEventListener('pageshow', refresh);
       document.removeEventListener('visibilitychange', visible);
     };
   }, [pathname, revision]);
   const title =
-    variant === 'alerts'
-      ? '내 관심지역 새 소식'
-      : variant === 'favorites'
-        ? '내 관심지역 관리'
-        : '관심지역 새 소식';
+    variant === 'settings'
+      ? '프로필·알림 설정'
+      : variant === 'zone'
+        ? '관심 정비구역'
+        : variant === 'favorites'
+          ? '내 관심지역·구역 관리'
+          : '관심지역 새 소식';
+  const savedZone = state?.favoriteZones?.find(
+    (f) => f.zone.externalId === externalId,
+  );
   return (
-    <section className="section personal-regions">
+    <section
+      className="section personal-regions"
+      id={variant === 'zone' ? 'official-zone-save' : undefined}
+    >
       <div className="section-heading">
         <h2>{title}</h2>
-        <Link href="/account">관리하기 →</Link>
+        {variant !== 'settings' && <Link href="/account">관심지역 관리 →</Link>}
       </div>
       {failed ? (
         <div role="alert">
@@ -95,7 +122,7 @@ export function PersonalRegions({
         <p role="status">계정 상태 확인 중…</p>
       ) : !state.authenticated ? (
         <div className="personal-empty">
-          <p>로그인하고 내 관심지역 소식을 모아보세요.</p>
+          <p>로그인하고 내 관심지역을 저장하세요.</p>
           <KakaoLogin label="카카오톡 로그인하기" />
         </div>
       ) : !state.ready ? (
@@ -107,6 +134,26 @@ export function PersonalRegions({
           >
             다시 조회
           </button>
+        </div>
+      ) : variant === 'settings' ? (
+        <>
+          <ProfileForm name={state.profileName} />
+          <NotificationPreferenceForm value={state.preferences} />
+        </>
+      ) : variant === 'zone' && externalId ? (
+        <div className="personal-edit">
+          {savedZone ? (
+            <>
+              <p>내 관심구역에 저장되어 있습니다.</p>
+              <OfficialZoneSettings
+                id={savedZone.id}
+                enabled={savedZone.alertsEnabled}
+              />
+              <RemoveOfficialZone id={savedZone.id} />
+            </>
+          ) : (
+            <SaveOfficialZone externalId={externalId} />
+          )}
         </div>
       ) : (
         <>
@@ -131,7 +178,7 @@ export function PersonalRegions({
           )}
           {variant === 'favorites' && (
             <>
-              <FavoriteForm selected="26230" ready={state.canSave !== false} />
+              <FavoriteForm selected="26230" ready />
               {state.favorites.map((f) => (
                 <article className="panel personal-edit" key={f.id}>
                   <strong>{f.region.name}</strong>
@@ -141,12 +188,32 @@ export function PersonalRegions({
               ))}
             </>
           )}
-          {state.canSave === false && (
-            <p className="notice">
-              카카오 로그인은 유지됩니다. 현재 프로필 모델은 이메일이 필수이므로
-              이메일 미제공 계정의 관심지역 저장은 지원하지 않습니다. 임의
-              이메일은 생성하지 않습니다.
-            </p>
+          {variant !== 'alerts' && (
+            <div className="saved-official-zones">
+              <h3>저장한 정비구역</h3>
+              {!state.favoriteZones?.length ? (
+                <p>
+                  관심 정비구역이 없습니다. 공식 구역 상세에서 저장해 보세요.
+                </p>
+              ) : (
+                state.favoriteZones.map((f) => (
+                  <article className="panel personal-edit" key={f.id}>
+                    <Link href={'/zones/' + f.zone.externalId}>
+                      {f.zone.name}
+                    </Link>
+                    {variant === 'favorites' && (
+                      <>
+                        <OfficialZoneSettings
+                          id={f.id}
+                          enabled={f.alertsEnabled}
+                        />
+                        <RemoveOfficialZone id={f.id} />
+                      </>
+                    )}
+                  </article>
+                ))
+              )}
+            </div>
           )}
           <div className="personal-notices">
             {state.notices.length ? (

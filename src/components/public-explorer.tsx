@@ -254,8 +254,9 @@ export function PublicExplorer({
         onToggleFavorite={(id: string) => {
           const zone = visible.find((z) => z.id === id);
           if (zone && !zone.demo) {
-            const code = districts.find((d) => d.name === zone.district)?.code;
-            router.push('/account' + (code ? '?district=' + code : ''));
+            router.push(
+              '/zones/' + encodeURIComponent(zone.id) + '#official-zone-save',
+            );
             return;
           }
           ctx.toggleFavorite(id);

@@ -56,6 +56,10 @@ export function RemoveFavorite({ id }: { id: string }) {
     message: '',
     success: false,
   });
+  useEffect(() => {
+    if (state.success)
+      window.dispatchEvent(new Event('jeongbi-account-changed'));
+  }, [state]);
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />

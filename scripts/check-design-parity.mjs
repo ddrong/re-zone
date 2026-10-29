@@ -128,12 +128,16 @@ for (const [name, props] of cases) {
   );
   console.log('PASS original component structure: ' + name);
 }
-assert.deepEqual(
-  fs.readFileSync('src/app/prototype.css'),
-  fs.readFileSync(base + 'src/style.css'),
+assert.ok(
+  fs
+    .readFileSync('src/app/prototype.css')
+    .equals(fs.readFileSync(base + 'src/style.css')),
+  'Original CSS bytes differ',
 );
-assert.deepEqual(
-  fs.readFileSync('public/assets/oni.png'),
-  fs.readFileSync(base + 'public/assets/oni.png'),
+assert.ok(
+  fs
+    .readFileSync('public/assets/oni.png')
+    .equals(fs.readFileSync(base + 'public/assets/oni.png')),
+  'Mascot differs from prototype; review user-provided asset changes (binary contents suppressed)',
 );
 console.log('PASS original mobile CSS and mascot binary parity');

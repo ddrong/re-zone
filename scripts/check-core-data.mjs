@@ -82,74 +82,280 @@ try {
 } finally {
   globalThis.fetch = originalFetch;
 }
-let authUser = {
+
+let actor = {
   id: '00000000-0000-4000-8000-000000000001',
-  email: 'fixture@example.com',
   app_metadata: { provider: 'kakao' },
 };
-let reads = 0,
-  writes = 0;
-const db = {
+const actorA = actor;
+const actorB = {
+  id: '00000000-0000-4000-8000-000000000002',
+  app_metadata: { provider: 'kakao' },
+};
+const profiles = new Map(),
+  regionRows = new Map(),
+  zoneRows = new Map(),
+  favorites = [],
+  zoneFavorites = [],
+  preferences = new Map();
+let sequence = 100,
+  dbReady = true,
+  officialReads = 0;
+const uid = () =>
+  '00000000-0000-4000-8000-' + String(++sequence).padStart(12, '0');
+const selectedProfile = () => profiles.get(actor?.id);
+function scoped(list, query) {
+  return list.filter(
+    (item) =>
+      item.id === query.where.id &&
+      profiles.get(query.where.user?.supabaseAuthId)?.id === item.userId,
+  );
+}
+const tx = {
   user: {
-    findUnique: async (query) => {
-      reads++;
-      assert.equal(query.where.supabaseAuthId, authUser.id);
+    upsert: async (q) => {
+      assert.equal(q.where.supabaseAuthId, actor.id);
+      assert.equal(q.create.supabaseAuthId, actor.id);
+      assert.ok(!('email' in q.where));
+      let p = profiles.get(actor.id);
+      if (!p) {
+        p = { id: uid(), name: null, email: q.create.email };
+        profiles.set(actor.id, p);
+      }
+      return p;
+    },
+    updateMany: async (q) => {
+      const p = profiles.get(q.where.supabaseAuthId);
+      if (!p || p.id !== q.where.id) return { count: 0 };
+      Object.assign(p, q.data);
+      return { count: 1 };
+    },
+    findUnique: async (q) => {
+      const p = profiles.get(q.where.supabaseAuthId);
+      if (!p) return null;
       return {
-        favoriteRegions: [],
+        name: p.name,
+        favoriteRegions: favorites
+          .filter((f) => f.userId === p.id)
+          .map((f) => ({
+            ...f,
+            region: [...regionRows.values()].find((r) => r.id === f.regionId),
+          })),
+        favoriteZones: zoneFavorites
+          .filter((f) => f.userId === p.id)
+          .map((f) => ({
+            ...f,
+            zone: [...zoneRows.values()].find((r) => r.id === f.zoneId),
+          })),
+        notificationPreference: preferences.get(p.id) || null,
         notifications: [],
         _count: { notifications: 0 },
       };
     },
   },
-  favoriteRegion: {
-    updateMany: async (query) => {
-      writes++;
-      assert.equal(query.where.user.supabaseAuthId, authUser.id);
-      return { count: 1 };
+  region: {
+    upsert: async (q) => {
+      let r = regionRows.get(q.where.code);
+      if (!r) {
+        r = { id: uid(), ...q.create };
+        regionRows.set(q.where.code, r);
+      }
+      return r;
     },
-    deleteMany: async (query) => {
-      writes++;
-      assert.equal(query.where.user.supabaseAuthId, authUser.id);
-      return { count: 1 };
+  },
+  dataSource: {
+    upsert: async (q) => {
+      assert.equal(q.where.code, 'BUSAN_DYNAMICE');
+      return { id: 'source-fixture' };
+    },
+  },
+  redevelopmentZone: {
+    upsert: async (q) => {
+      assert.equal(q.create.externalId, 'BARA_0000000000056');
+      let z = zoneRows.get(q.create.externalId);
+      if (!z) {
+        z = { id: uid(), ...q.create };
+        zoneRows.set(q.create.externalId, z);
+      } else Object.assign(z, q.update);
+      return z;
+    },
+  },
+  favoriteRegion: {
+    upsert: async (q) => {
+      assert.equal(q.create.userId, selectedProfile().id);
+      let f = favorites.find(
+        (f) => f.userId === q.create.userId && f.regionId === q.create.regionId,
+      );
+      if (!f) {
+        f = { id: uid(), alertsEnabled: false, ...q.create };
+        favorites.push(f);
+      }
+      return f;
+    },
+    updateMany: async (q) => {
+      const matches = scoped(favorites, q);
+      matches.forEach((f) => Object.assign(f, q.data));
+      return { count: matches.length };
+    },
+    deleteMany: async (q) => {
+      const matches = scoped(favorites, q);
+      for (const f of matches) favorites.splice(favorites.indexOf(f), 1);
+      return { count: matches.length };
+    },
+  },
+  favoriteZone: {
+    upsert: async (q) => {
+      assert.equal(q.create.userId, selectedProfile().id);
+      let f = zoneFavorites.find(
+        (f) => f.userId === q.create.userId && f.zoneId === q.create.zoneId,
+      );
+      if (!f) {
+        f = { id: uid(), alertsEnabled: false, ...q.create };
+        zoneFavorites.push(f);
+      }
+      return f;
+    },
+    updateMany: async (q) => {
+      const matches = scoped(zoneFavorites, q);
+      matches.forEach((f) => Object.assign(f, q.data));
+      return { count: matches.length };
+    },
+    deleteMany: async (q) => {
+      const matches = scoped(zoneFavorites, q);
+      for (const f of matches)
+        zoneFavorites.splice(zoneFavorites.indexOf(f), 1);
+      return { count: matches.length };
+    },
+  },
+  notificationPreference: {
+    upsert: async (q) => {
+      assert.equal(q.where.userId, selectedProfile().id);
+      const value = preferences.has(q.where.userId)
+        ? { ...preferences.get(q.where.userId), ...q.update }
+        : q.create;
+      preferences.set(q.where.userId, value);
+      return value;
     },
   },
 };
+const db = {
+  ...tx,
+  $transaction: async (callback) => {
+    if (!dbReady) throw Object.assign(new Error('fixture'), { code: 'P2021' });
+    return callback(tx);
+  },
+};
+const member = load('src/lib/member.ts', {
+  'server-only': {},
+  './supabase': { getAuthUser: async () => actor },
+});
 const aliases = {
-  '@/lib/supabase': { getAuthUser: async () => authUser },
+  '@/lib/member': member,
   '@/lib/db': { getDb: () => db },
   '@/lib/regions': regions,
+  '@/lib/public-zones': {
+    getOfficialZone: async () => {
+      officialReads++;
+      return {
+        id: 'BARA_0000000000056',
+        name: '가야1 재개발',
+        district: '부산진구',
+        type: '재개발',
+        demo: false,
+        address: '부산진구 가야동 410번지',
+      };
+    },
+  },
   'next/cache': { revalidatePath: () => {} },
   'next/server': { ...nodeRequire('next/server'), connection: async () => {} },
 };
 const route = load('src/app/api/account/route.ts', aliases);
-let response = await route.GET();
-assert.ok(response.headers.get('cache-control').includes('no-store'));
-assert.equal((await response.json()).authenticated, true);
-authUser = null;
-response = await route.GET();
-assert.equal((await response.json()).authenticated, false);
-assert.equal(reads, 1);
 const actions = load('src/app/account/actions.ts', aliases);
 const form = new FormData();
-form.set('id', '00000000-0000-4000-8000-000000000002');
+form.set('district', '26230');
+form.set('externalId', 'BARA_0000000000056');
+form.set('frequency', 'daily');
+form.set('appEnabled', 'on');
+assert.equal((await actions.saveFavorite({}, form)).success, true);
+assert.equal(profiles.get(actor.id).email, null);
+assert.equal((await actions.saveOfficialZone({}, form)).success, true);
+form.set('name', '회원 A');
+form.set('supabaseAuthId', actorB.id);
+form.set('userId', actorB.id);
+assert.equal((await actions.saveProfile({}, form)).success, true);
+assert.equal(
+  (await actions.saveNotificationPreference({}, form)).success,
+  true,
+);
+let response = await route.GET();
+assert.ok(response.headers.get('cache-control').includes('no-store'));
+let body = await response.json();
+assert.equal(body.favorites.length, 1);
+assert.equal(body.favoriteZones.length, 1);
+assert.equal(body.profileName, '회원 A');
+assert.equal(body.preferences.frequency, 'daily');
+assert.equal(body.canSave, true);
+const regionA = body.favorites[0].id,
+  zoneA = body.favoriteZones[0].id;
+actor = actorB;
+body = await (await route.GET()).json();
+assert.equal(body.favorites.length, 0);
+assert.equal(body.favoriteZones.length, 0);
+assert.equal(body.preferences, null);
+form.set('id', regionA);
 form.set('alerts', 'on');
 assert.equal((await actions.updateFavorite({}, form)).success, false);
 assert.equal((await actions.removeFavorite({}, form)).success, false);
-assert.equal(writes, 0);
-authUser = {
-  id: '00000000-0000-4000-8000-000000000001',
-  email: 'fixture@example.com',
-  app_metadata: { provider: 'kakao' },
-};
+form.set('id', zoneA);
+assert.equal((await actions.updateOfficialZone({}, form)).success, false);
+assert.equal((await actions.removeOfficialZone({}, form)).success, false);
+assert.equal((await actions.saveFavorite({}, form)).success, true);
+assert.equal((await actions.saveOfficialZone({}, form)).success, true);
+actor = actorA;
+body = await (await route.GET()).json();
+assert.equal(body.favorites.length, 1);
+assert.equal(body.favorites[0].alertsEnabled, false);
+assert.equal(body.favoriteZones.length, 1);
+form.set('id', zoneA);
+assert.equal((await actions.updateOfficialZone({}, form)).success, true);
+assert.equal((await actions.removeOfficialZone({}, form)).success, true);
+form.set('id', regionA);
 assert.equal((await actions.updateFavorite({}, form)).success, true);
 assert.equal((await actions.removeFavorite({}, form)).success, true);
-assert.equal(writes, 2);
-authUser = { ...authUser, email: undefined };
-form.set('district', '26230');
-assert.equal((await actions.saveFavorite({}, form)).success, false);
+const readsBefore = officialReads;
+form.set('externalId', 'u');
+assert.equal((await actions.saveOfficialZone({}, form)).success, false);
+assert.equal(officialReads, readsBefore);
+form.set('frequency', 'forged');
+assert.equal(
+  (await actions.saveNotificationPreference({}, form)).success,
+  false,
+);
+form.set('name', 'x'.repeat(101));
+assert.equal((await actions.saveProfile({}, form)).success, false);
+actor = null;
+for (const fn of [
+  'saveFavorite',
+  'removeFavorite',
+  'updateFavorite',
+  'saveOfficialZone',
+  'removeOfficialZone',
+  'updateOfficialZone',
+  'saveProfile',
+  'saveNotificationPreference',
+])
+  assert.equal((await actions[fn]({}, form)).code, 'AUTH_REQUIRED');
+assert.equal((await (await route.GET()).json()).authenticated, false);
+actor = { id: actorA.id, app_metadata: { provider: 'email' } };
+assert.equal(await member.getMember(), null);
+actor = { ...actorA, is_anonymous: true };
+assert.equal(await member.getMember(), null);
+actor = actorA;
+dbReady = false;
+assert.equal((await actions.saveFavorite({}, form)).code, 'DB_NOT_READY');
 console.log(
-  'PASS mocked owner-scoped account reads/updates/removals, anonymous rejection, email-less profile guard',
+  'PASS mocked email-less profile, region/official-zone/settings persistence and reload, A/B ownership isolation, anonymous/unconfirmed rejection, invalid input and DB-not-ready handling',
 );
 console.log(
-  'Mocks only: no database, real account, or RLS policy was changed or exercised.',
+  'Memory mocks only: no DB or Auth users were created or changed; real RLS and authenticated browser tests remain pending.',
 );

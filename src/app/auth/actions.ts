@@ -2,6 +2,12 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+import {
+  clearProjectAuthCookies,
+  setLoggedOut,
+  LOGOUT_COOKIE,
+} from '@/lib/auth-cookies';
 import { createAuthClient } from '@/lib/supabase';
 import {
   safeReturnTo,
@@ -82,23 +88,37 @@ export async function authenticate(
     };
   }
   store.delete('jeongbi_auth_return');
+  store.delete(LOGOUT_COOKIE);
+  revalidatePath('/', 'layout');
   redirect(withAuthSuccess(next));
 }
 export async function signOut() {
-  const client = await createAuthClient();
-  let failed = false;
-  if (client) {
-    try {
-      const { error } = await client.auth.signOut();
-      failed = Boolean(error);
-    } catch {
-      failed = true;
-    }
-  }
-  if (failed) redirect('/my?notice=logout-failed');
   const store = await cookies();
-  store.delete('jeongbi_auth_return');
-  redirect('/?signed_out=1');
+  let remoteFailure = false;
+  try {
+    setLoggedOut(store);
+  } catch {
+    redirect('/my?notice=logout-failed');
+  }
+  try {
+    const client = await createAuthClient();
+    if (client) {
+      const { error } = await client.auth.signOut({ scope: 'local' });
+      remoteFailure = Boolean(error);
+    }
+  } catch {
+    remoteFailure = true;
+  }
+  try {
+    clearProjectAuthCookies(store);
+    store.delete('jeongbi_auth_return');
+  } catch {
+    redirect('/my?notice=logout-failed');
+  }
+  revalidatePath('/', 'layout');
+  redirect(
+    '/?signed_out=1' + (remoteFailure ? '&notice=logout-local-only' : ''),
+  );
 }
 
 export async function startKakao(

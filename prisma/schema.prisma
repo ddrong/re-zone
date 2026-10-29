@@ -40,7 +40,8 @@ enum NotificationType {
 /// 비밀번호와 인증 세션은 Supabase Auth에서 관리한다.
 model User {
   id        String   @id @default(uuid()) @db.Uuid
-  email     String   @unique
+  /// 이메일 미제공 OAuth 계정은 null. 소유권은 supabaseAuthId로 확인한다.
+  email     String?  @unique
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -49,8 +50,10 @@ model User {
   supabaseAuthId String? @unique @db.Uuid
   avatarUrl      String?
 
-  favoriteRegions FavoriteRegion[]
-  notifications   Notification[]
+  favoriteZones          FavoriteZone[]
+  notificationPreference NotificationPreference?
+  favoriteRegions        FavoriteRegion[]
+  notifications          Notification[]
 
   @@map("users")
 }
@@ -115,6 +118,7 @@ model RedevelopmentZone {
   region       Region            @relation(fields: [regionId], references: [id], onDelete: Restrict)
   source       DataSource        @relation(fields: [sourceId], references: [id], onDelete: Restrict)
   currentStage ProjectStage?     @relation(fields: [currentStageId], references: [id], onDelete: Restrict)
+  favorites    FavoriteZone[]
   stageEvents  ZoneStageEvent[]
   listings     PropertyListing[]
 
@@ -263,4 +267,36 @@ model DataSyncRun {
 
   @@index([sourceId, startedAt])
   @@map("data_sync_runs")
+}
+
+/// 공식 정비구역에 대한 회원별 관심 설정. 시연 구역은 저장하지 않는다.
+model FavoriteZone {
+  id            String            @id @default(uuid()) @db.Uuid
+  userId        String            @db.Uuid
+  zoneId        String            @db.Uuid
+  alertsEnabled Boolean           @default(false)
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @db.Timestamptz(3)
+  user          User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  zone          RedevelopmentZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, zoneId])
+  @@index([zoneId, alertsEnabled])
+  @@map("favorite_zones")
+}
+
+/// 사용자 수신 희망 설정. 저장만으로 실제 외부 알림을 전송하지 않는다.
+model NotificationPreference {
+  userId         String   @id @db.Uuid
+  saleEnabled    Boolean  @default(false)
+  auctionEnabled Boolean  @default(false)
+  priceEnabled   Boolean  @default(false)
+  stageEnabled   Boolean  @default(false)
+  appEnabled     Boolean  @default(true)
+  kakaoRequested Boolean  @default(false)
+  frequency      String   @default("daily")
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("notification_preferences")
 }

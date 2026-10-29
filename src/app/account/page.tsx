@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { LoginLink } from '@/components/login-link';
 import { Suspense } from 'react';
 import { connection } from 'next/server';
-import { getAuthUser } from '@/lib/supabase';
+import { getMember } from '@/lib/member';
 import { getAccount } from '@/lib/account';
 import { districts } from '@/lib/regions';
 import { FavoriteForm, RemoveFavorite } from '@/components/favorite-form';
@@ -27,7 +27,7 @@ async function Content({
   searchParams: Promise<{ district?: string; notice?: string }>;
 }) {
   await connection();
-  const user = await getAuthUser();
+  const user = await getMember();
   if (!user)
     return (
       <section className="empty-state">
@@ -57,7 +57,7 @@ async function Content({
         <div>
           <p className="eyebrow">MY INTEREST</p>
           <h1>내 관심지역</h1>
-          <p className="muted">{user.email}</p>
+          <p className="muted">{user.email || '이메일 미제공 계정'}</p>
         </div>
         <form action={signOut}>
           <button className="button secondary">로그아웃</button>

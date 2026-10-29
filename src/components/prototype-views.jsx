@@ -10,7 +10,6 @@ import {
   Check,
   ChevronRight,
   CircleHelp,
-  Clock3,
   Heart,
   House,
   Info,
@@ -994,30 +993,11 @@ export function AnalysisPage({
 }
 
 export function MyPage({
-  preferences,
-  setPreferences,
-  frequency,
-  setFrequency,
-  favorites,
   onNavigate,
-  onToggleFavorite,
   accountPanel,
+  preferencesPanel,
+  favoritesPanel,
 }) {
-  const settings = [
-    ['sale', House, '신규 매매', '관심 구역에 매매 매물 예시가 등록될 때'],
-    ['auction', Gavel, '신규 경매', '경매 게시 예시가 등록될 때'],
-    ['price', TrendingUp, '가격 변경', '매물 가격 변동 소식이 있을 때'],
-    ['stage', Activity, '사업단계 변경', '사업 단계 소식이 있을 때'],
-    ['app', Bell, '앱 알림', '서비스 내 알림을 받을 때'],
-    [
-      'kakao',
-      Bell,
-      '카카오톡 알림 희망',
-      '연동 승인 전에는 실제 메시지가 발송되지 않습니다.',
-    ],
-  ];
-  const toggle = (key) =>
-    setPreferences((current) => ({ ...current, [key]: !current[key] }));
   return (
     <>
       <section className="profile-card">
@@ -1032,124 +1012,18 @@ export function MyPage({
         <Pill tone="blue">MY</Pill>
       </section>
 
-      <Section title="계정 연결">
-        {accountPanel}
-        <div className="connection-grid">
-          <div>
-            <span className="provider-icon email">✉</span>
-            <span>
-              <strong>이메일</strong>
-              <small>연결 예정</small>
-            </span>
-            <Clock3 size={17} />
-          </div>
-          <div>
-            <span className="provider-icon google">G</span>
-            <span>
-              <strong>Google</strong>
-              <small>연결 예정</small>
-            </span>
-            <Clock3 size={17} />
-          </div>
-          <div>
-            <span className="provider-icon kakao">T</span>
-            <span>
-              <strong>카카오</strong>
-              <small>승인 전</small>
-            </span>
-            <Clock3 size={17} />
-          </div>
-        </div>
-      </Section>
+      <Section title="계정 연결">{accountPanel}</Section>
 
-      <Section title="알림 설정" className="settings-section">
-        <div className="section-subtitle">받고 싶은 소식을 선택하세요.</div>
-        <div className="settings-card">
-          {settings.map(([key, Icon, title, description]) => (
-            <label className="setting-row" key={key}>
-              <span className={`setting-icon ${key}`}>
-                <Icon size={19} />
-              </span>
-              <span className="setting-copy">
-                <strong>
-                  {title}
-                  {key === 'kakao' && <i className="pending-badge">승인 전</i>}
-                </strong>
-                <small>{description}</small>
-              </span>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={preferences[key]}
-                onChange={() => toggle(key)}
-                aria-label={`${title} ${preferences[key] ? '켜짐' : '꺼짐'}`}
-              />
-            </label>
-          ))}
-          <label className="frequency-row">
-            <span>
-              <Clock3 size={19} />
-              <strong>알림 빈도</strong>
-            </span>
-            <select
-              value={frequency}
-              onChange={(event) => setFrequency(event.target.value)}
-              aria-label="알림 빈도"
-            >
-              <option value="instant">즉시 알림</option>
-              <option value="daily">하루 한 번</option>
-              <option value="weekly">일주일 한 번</option>
-            </select>
-          </label>
-        </div>
-        <p className="tiny-note">
-          설정은 현재 화면에서만 동작하며 외부 계정이나 알림 서비스에
-          저장·전송되지 않습니다.
-        </p>
-      </Section>
+      {preferencesPanel}
 
-      <Section
-        title="관심지역 관리"
-        action={
-          <button className="text-action" onClick={() => onNavigate('areas')}>
-            지역 추가 <ChevronRight size={15} />
-          </button>
-        }
-      >
-        <div className="managed-zones">
-          {zones
-            .filter((zone) => favorites.includes(zone.id))
-            .map((zone) => (
-              <div className="managed-zone" key={zone.id}>
-                <button onClick={() => onNavigate('favorites')}>
-                  {zone.name}
-                </button>
-                <button
-                  onClick={() => onToggleFavorite(zone.id)}
-                  aria-label={`${zone.name} 관심 해제`}
-                >
-                  <X size={17} />
-                </button>
-              </div>
-            ))}
-          {!favorites.length && (
-            <p className="empty-inline">등록된 관심 구역이 없습니다.</p>
-          )}
-          <button
-            className="add-region-button"
-            onClick={() => onNavigate('areas')}
-          >
-            <Plus size={18} /> 관심지역 추가
-          </button>
-        </div>
-      </Section>
+      {favoritesPanel}
 
       <Section title="서비스 안내">
         <button className="about-row" onClick={() => onNavigate('alerts')}>
           <Info size={18} />
           <span>
             <strong>알림과 개인정보</strong>
-            <small>이메일 인증은 실제 연결, 매물·알림은 시연용입니다.</small>
+            <small>이메일·카카오 계정과 회원별 저장 정보를 확인하세요.</small>
           </span>
           <ChevronRight size={17} />
         </button>

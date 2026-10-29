@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
+import { AUTH_NO_CACHE, LOGOUT_COOKIE } from '@/lib/auth-cookies';
 import { createAuthClient } from '@/lib/supabase';
 import {
   callbackReturnTo,
@@ -32,7 +33,10 @@ export async function GET(request: NextRequest) {
       (cancelled ? '&reason=cancelled' : '');
   const response = NextResponse.redirect(new URL(target, PRODUCTION_ORIGIN));
   response.cookies.delete('jeongbi_auth_return');
-  response.headers.set('Cache-Control', 'private, no-store');
+  if (success) response.cookies.delete(LOGOUT_COOKIE);
+  Object.entries(AUTH_NO_CACHE).forEach(([name, value]) =>
+    response.headers.set(name, value),
+  );
   response.headers.set('Referrer-Policy', 'no-referrer');
   return response;
 }

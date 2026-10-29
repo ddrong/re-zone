@@ -42,17 +42,19 @@ export function AppHeader({
   const [unread, setUnread] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    let generation = 0;
     const refresh = async () => {
+      const version = ++generation;
       try {
         const r = await fetch('/api/account', {
           cache: 'no-store',
           signal: controller.signal,
         });
         const d = await r.json();
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted && version === generation)
           setUnread(r.ok && d.authenticated && d.ready ? (d.unread ?? 0) : 0);
       } catch {
-        if (!controller.signal.aborted) setUnread(0);
+        if (!controller.signal.aborted && version === generation) setUnread(0);
       }
     };
     void refresh();
@@ -60,11 +62,19 @@ export function AppHeader({
       if (document.visibilityState === 'visible') void refresh();
     };
     document.addEventListener('visibilitychange', visible);
+    const authChanged = () => {
+      setUnread(0);
+      void refresh();
+    };
     window.addEventListener('jeongbi-account-changed', refresh);
+    window.addEventListener('jeongbi-auth-state', authChanged);
+    window.addEventListener('pageshow', authChanged);
     return () => {
       controller.abort();
       document.removeEventListener('visibilitychange', visible);
       window.removeEventListener('jeongbi-account-changed', refresh);
+      window.removeEventListener('jeongbi-auth-state', authChanged);
+      window.removeEventListener('pageshow', authChanged);
     };
   }, [pathname]);
   return (

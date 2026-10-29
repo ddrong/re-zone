@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { connection } from 'next/server';
-import { getAuthUser } from '@/lib/supabase';
+import { getMember } from '@/lib/member';
 import { signOut } from '@/app/auth/actions';
 import { LoginLink, SignupLink } from '@/components/login-link';
 export const metadata = { title: 'MY' };
@@ -15,7 +15,7 @@ export default function My({ searchParams }: { searchParams: Params }) {
 }
 async function AccountConnection({ searchParams }: { searchParams: Params }) {
   await connection();
-  const user = await getAuthUser();
+  const user = await getMember();
   const params = await searchParams;
   return (
     <div className="account-connection">

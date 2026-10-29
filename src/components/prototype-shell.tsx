@@ -60,15 +60,6 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
         Page | undefined) ?? 'other');
   const [favorites] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-  const [preferences, setPreferences] = useState({
-    sale: true,
-    auction: true,
-    price: true,
-    stage: true,
-    app: true,
-    kakao: true,
-  });
-  const [frequency, setFrequency] = useState('instant');
   const [scenario, setScenario] = useState('기준');
   const [inputs, setInputs] = useState(emptyAmounts);
   const navigate = (nextPage: string) => router.push(routes[nextPage] ?? '/');
@@ -154,14 +145,10 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
           )}
           {page === 'my' && (
             <MyPage
-              preferences={preferences}
-              setPreferences={setPreferences}
-              frequency={frequency}
-              setFrequency={setFrequency}
-              favorites={favorites}
               onNavigate={navigate}
-              onToggleFavorite={toggleFavorite}
               accountPanel={children}
+              preferencesPanel={<PersonalRegions variant="settings" />}
+              favoritesPanel={<PersonalRegions variant="favorites" />}
             />
           )}
           {!['home', 'favorites', 'alerts', 'analysis', 'my'].includes(page) &&

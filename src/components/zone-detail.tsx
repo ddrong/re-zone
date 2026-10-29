@@ -1,4 +1,5 @@
 'use client';
+import { PersonalRegions } from './personal-regions';
 import { DetailPage } from './prototype-views';
 import { KakaoMap } from './kakao-map';
 import { ListingResources } from './listing-resources';
@@ -7,7 +8,11 @@ import type { PublicZone } from '@/lib/public-zones';
 export function ZoneDetail({ zone }: { zone: PublicZone }) {
   const ctx = usePrototype();
   const toggle = () =>
-    zone.demo ? ctx.toggleFavorite(zone.id) : ctx.navigate('account');
+    zone.demo
+      ? ctx.toggleFavorite(zone.id)
+      : document
+          .getElementById('official-zone-save')
+          ?.scrollIntoView({ block: 'center' });
   return (
     <>
       {!zone.demo && (
@@ -35,6 +40,7 @@ export function ZoneDetail({ zone }: { zone: PublicZone }) {
           selectedId={zone.id}
         />
       )}
+      {!zone.demo && <PersonalRegions variant="zone" externalId={zone.id} />}
       <DetailPage
         zone={zone}
         isFavorite={zone.demo && ctx.favorites.includes(zone.id)}

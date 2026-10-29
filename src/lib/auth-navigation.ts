@@ -33,8 +33,15 @@ export function safeReturnTo(value: unknown, fallback = '/areas'): string {
       'access_token',
       'refresh_token',
       'auth_success',
+      'signed_out',
     ])
       url.searchParams.delete(key);
+    if (
+      ['logout-local-only', 'logout-failed'].includes(
+        url.searchParams.get('notice') ?? '',
+      )
+    )
+      url.searchParams.delete('notice');
     if (/(?:access_token|refresh_token|token_hash|code)=/i.test(url.hash))
       url.hash = '';
     return url.pathname + url.search + url.hash;
