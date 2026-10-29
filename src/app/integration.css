@@ -1,0 +1,341 @@
+.desktop-nav {
+  display: none;
+}
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -80px;
+  padding: 10px;
+  background: white;
+  z-index: 100;
+}
+.skip-link:focus {
+  top: 10px;
+}
+.data-mode-switch {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 13px;
+  background: #eaf2f7;
+}
+.data-mode-switch button {
+  flex: 1;
+  padding: 10px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: transparent;
+  color: #63758d;
+}
+.data-mode-switch button.selected {
+  background: white;
+  color: #109a86;
+  font-weight: 800;
+  box-shadow: var(--card-shadow);
+}
+.official-status,
+.demo-status,
+.live-account-link {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  margin: 0 0 16px;
+  border-radius: 15px;
+  background: #e9faf5;
+  border: 1px solid #c8eee4;
+  font-size: 11px;
+  color: #25455b;
+  line-height: 1.6;
+}
+.demo-status {
+  background: #fff7e9;
+  border-color: #f0dfbe;
+}
+.official-status a,
+.live-account-link a {
+  color: #087b6a;
+  text-decoration: underline;
+  font-weight: 700;
+}
+.official-status small,
+.live-account-link small {
+  color: #697f92;
+  font-size: 10px;
+}
+.public-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  font-size: 12px;
+}
+.public-pagination button {
+  padding: 10px 18px;
+  border-radius: 11px;
+  background: #e9f7f3;
+  color: #087c6b;
+}
+.public-pagination button:disabled {
+  opacity: 0.4;
+}
+.auth-page {
+  padding: 14px 0;
+}
+.auth-card {
+  padding: 24px 20px;
+  border: 1px solid #e8eef5;
+  background: white;
+  border-radius: 23px;
+  box-shadow: var(--card-shadow);
+}
+.auth-card h1 {
+  font-size: 25px;
+  margin: 10px 0;
+}
+.auth-card > .muted {
+  font-size: 12px;
+}
+.auth-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.auth-form label {
+  font-size: 12px;
+  font-weight: 750;
+}
+.auth-form input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1px solid #dce6ef;
+  color: #14294d;
+  background: #fbfdff;
+}
+.button,
+.auth-card .button-primary,
+.auth-card .button-secondary,
+.account-connection .button-primary,
+.account-connection .button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 11px 16px;
+  gap: 7px;
+  font-size: 12px;
+}
+.button.primary {
+  background: #18bea3;
+  color: white;
+  border-radius: 12px;
+}
+.button.secondary {
+  background: #eff8f6;
+  color: #109a86;
+  border-radius: 12px;
+}
+.button:disabled {
+  opacity: 0.5;
+}
+.center {
+  text-align: center;
+}
+.small {
+  font-size: 11px;
+}
+.muted {
+  color: #8292aa;
+}
+.form-error {
+  font-size: 11px;
+  color: #af3646;
+}
+.success {
+  font-size: 11px;
+  color: #07836c;
+}
+.notice {
+  background: #fff6e5;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #86621e;
+}
+.account-connection {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 17px;
+  background: #fff;
+  margin-bottom: 14px;
+  border: 1px solid #e7eef5;
+  font-size: 12px;
+}
+.account-connection p {
+  overflow-wrap: anywhere;
+}
+.account-connection form {
+  display: grid;
+}
+.account-page {
+  padding: 0;
+}
+.account-page .section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.account-page h1 {
+  font-size: 23px;
+}
+.panel {
+  padding: 18px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 15px;
+}
+.favorite-form label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.search-row {
+  display: flex;
+  gap: 8px;
+}
+.favorite-form select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e4ebf2;
+  border-radius: 11px;
+}
+.favorite-form p {
+  font-size: 11px;
+}
+.favorite-form .button {
+  font-size: 11px;
+  padding: 10px;
+}
+.favorite-grid {
+  display: grid;
+  gap: 12px;
+}
+.favorite-card h2 {
+  font-size: 17px;
+}
+.favorite-card a {
+  font-size: 12px;
+  color: #109a86;
+}
+.text-button {
+  font-size: 11px;
+  background: transparent;
+  color: #9c4655;
+  text-decoration: underline;
+  padding: 8px 0;
+}
+.results-heading {
+  margin: 20px 0;
+}
+.results-heading h2 {
+  font-size: 17px;
+}
+.button-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.app-shell .district-filter {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.app-shell .district-filter button {
+  flex: 0 0 auto;
+}
+.app-shell main > .empty-state h1 {
+  font-size: 24px;
+}
+.profile-card .eyebrow {
+  font-size: 11px;
+}
+@media (min-width: 1000px) {
+  .app-shell {
+    width: min(1100px, 100%);
+    padding-bottom: 36px;
+    min-height: 100vh;
+  }
+  .app-shell main {
+    max-width: 900px;
+    margin: auto;
+    padding: 12px 34px 40px;
+  }
+  .topbar {
+    height: 78px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .topbar .page-title {
+    text-align: left;
+    margin-left: 14px;
+  }
+  .desktop-nav {
+    display: flex;
+    position: sticky;
+    top: 78px;
+    z-index: 19;
+    gap: 10px;
+    padding: 10px 40px;
+    background: #f8fbfff5;
+    border-bottom: 1px solid #e6edf4;
+    backdrop-filter: blur(16px);
+  }
+  .desktop-nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 750;
+    text-decoration: none;
+    color: #61758e;
+  }
+  .desktop-nav a[aria-current='page'] {
+    background: #dff8ef;
+    color: #109a86;
+  }
+  .bottom-nav {
+    display: none;
+  }
+  .welcome-card {
+    min-height: 210px;
+  }
+  .welcome-copy h2 {
+    font-size: 35px;
+  }
+  .mascot {
+    width: 190px;
+    height: 190px;
+    right: 35px;
+  }
+  .zone-stack,
+  .listing-stack,
+  .favorite-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .home-footnote {
+    margin-top: 20px;
+  }
+  .auth-page {
+    max-width: 430px;
+    margin: auto;
+  }
+}

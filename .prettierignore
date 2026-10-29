@@ -7,3 +7,7 @@ package-lock.json
 next-env.d.ts
 *.tsbuildinfo
 /README.md
+
+# Keep the standalone Vite reference and its copied stylesheet unchanged.
+prototypes/
+src/app/prototype.css

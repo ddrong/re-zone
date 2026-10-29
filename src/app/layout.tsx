@@ -1,30 +1,33 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { PrototypeShell } from '@/components/prototype-shell';
 import './globals.css';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
 export const metadata: Metadata = {
-  title: '바이브 코딩 시작 안내',
+  title: { default: '정비ON AI | 부산 정비사업', template: '%s | 정비ON AI' },
   description:
-    '요구사항 분석부터 DB·서버·화면 구현과 검증까지, 비개발자를 위한 개발 순서 안내',
+    '부산 정비사업 공식 공개자료와 관심지역을 확인하세요. 시연용 매물과 계산 정보는 별도로 표시합니다.',
 };
-
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html
-      lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="ko">
+      <body>
+        <a className="skip-link" href="#main">
+          본문 바로가기
+        </a>
+        <Suspense
+          fallback={
+            <div className="app-shell" role="status">
+              Loading JeongbiON...
+            </div>
+          }
+        >
+          <PrototypeShell>{children}</PrototypeShell>
+        </Suspense>
+      </body>
     </html>
   );
 }
