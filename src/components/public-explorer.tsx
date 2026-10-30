@@ -17,6 +17,7 @@ type Result = {
   districtCounts: Record<string, number>;
 };
 export function PublicExplorer({
+  mapKey,
   initialStage = '',
   initialDistrict = '',
   initialResult = null,
@@ -25,6 +26,7 @@ export function PublicExplorer({
   initialPage = 1,
   initialMode = 'official',
 }: {
+  mapKey: string;
   initialStage?: string;
   initialDistrict?: string;
   initialResult?: Result | null;
@@ -267,6 +269,7 @@ export function PublicExplorer({
         mapPanel={
           <div id="region-map">
             <KakaoMap
+              apiKey={mapKey}
               zones={mode === 'official' ? visible : []}
               district={district}
               selectedId={selectedId}

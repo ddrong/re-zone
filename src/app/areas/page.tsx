@@ -3,6 +3,7 @@ import { connection } from 'next/server';
 import { PublicExplorer } from '@/components/public-explorer';
 import { searchOfficialZones } from '@/lib/public-zones';
 import { districts } from '@/lib/regions';
+import { getPublicKakaoMapKey } from '@/lib/kakao-map-config';
 export const metadata = { title: '지역 탐색' };
 type Params = Promise<{
   district?: string;
@@ -51,6 +52,7 @@ async function InitialSearch({ searchParams }: { searchParams: Params }) {
     }
   return (
     <PublicExplorer
+      mapKey={getPublicKakaoMapKey()}
       initialDistrict={district?.name ?? ''}
       initialResult={result}
       initialQuery={query}

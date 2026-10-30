@@ -60,19 +60,19 @@ declare global {
   }
 }
 export function KakaoMap({
+  apiKey,
   zones,
   district = '',
   selectedId,
   onSelect,
 }: {
+  apiKey: string;
   zones: PublicZone[];
   district?: string;
   selectedId?: string;
   onSelect?: (id: string) => void;
 }) {
-  const key =
-    process.env.NEXT_PUBLIC_KAKAO_MAP_JS_KEY ||
-    process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+  const key = apiKey.trim();
   const node = useRef<HTMLDivElement>(null);
   const instance = useRef<MapInstance | null>(null);
   const addressCache = useRef(new Map<string, Promise<GeoResult | null>>());
@@ -205,7 +205,14 @@ export function KakaoMap({
     };
   }, [ready, zones, district, selectedId]);
   return (
-    <section className="map-panel" aria-label="카카오맵 위치 안내">
+    <section
+      className="map-panel"
+      aria-label="카카오맵 위치 안내"
+      data-map-key-configured={Boolean(key)}
+      data-map-state={
+        !key ? 'unconfigured' : failed ? 'failed' : ready ? 'ready' : 'loading'
+      }
+    >
       {key && !failed && (
         <Script
           id="jeongbi-kakao-sdk"

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { getOfficialZone } from '@/lib/public-zones';
 import { zones } from '@/lib/prototype-data';
 import { ZoneDetail } from '@/components/zone-detail';
+import { getPublicKakaoMapKey } from '@/lib/kakao-map-config';
 export const metadata = { title: '구역 상세 분석' };
 export default function ZonePage({
   params,
@@ -36,5 +37,5 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
     );
   }
   if (!zone) notFound();
-  return <ZoneDetail zone={zone} />;
+  return <ZoneDetail zone={zone} mapKey={getPublicKakaoMapKey()} />;
 }

@@ -5,7 +5,13 @@ import { KakaoMap } from './kakao-map';
 import { ListingResources } from './listing-resources';
 import { usePrototype } from './prototype-shell';
 import type { PublicZone } from '@/lib/public-zones';
-export function ZoneDetail({ zone }: { zone: PublicZone }) {
+export function ZoneDetail({
+  zone,
+  mapKey = '',
+}: {
+  zone: PublicZone;
+  mapKey?: string;
+}) {
   const ctx = usePrototype();
   const toggle = () =>
     zone.demo
@@ -35,6 +41,7 @@ export function ZoneDetail({ zone }: { zone: PublicZone }) {
       )}
       {!zone.demo && (
         <KakaoMap
+          apiKey={mapKey}
           zones={[zone]}
           district={zone.district}
           selectedId={zone.id}
