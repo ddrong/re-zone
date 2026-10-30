@@ -3,8 +3,8 @@ export function ListingResources() {
     <aside className="listing-resources">
       <strong>실제 매물은 제공처에서 확인하세요.</strong>
       <p>
-        이 앱의 매물은 시연용 가상 매물로 실제 거래할 수 없습니다. 외부 사이트의
-        매물을 복제·저장하지 않습니다.
+        이 앱은 실제 매물·거래가격을 제공하지 않습니다. 외부 사이트의 매물을
+        복제·저장하지 않습니다.
       </p>
       <div>
         <a

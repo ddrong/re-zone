@@ -15,6 +15,7 @@ import { DashboardHome } from './dashboard-home';
 import { calculateAmounts, emptyAmounts } from '@/lib/calculator';
 import { AppHeader } from './app-header';
 import { ListingResources } from './listing-resources';
+import { OfficialZoneFavoritesProvider } from './official-zone-favorite';
 type Page =
   | 'home'
   | 'areas'
@@ -93,87 +94,90 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
     { Icon: UserRound, label: 'MY', id: 'my' },
   ];
   return (
-    <PrototypeContext.Provider
-      value={{ favorites, recent, toggleFavorite, openZone, navigate }}
-    >
-      <div className="app-shell">
-        <AppHeader
-          page={page}
-          title={pageTitles[page] ?? '정비ON AI'}
-          onBack={() => navigate(page === 'detail' ? 'areas' : 'home')}
-          onNavigate={navigate}
-        />
-        <nav className="desktop-nav" aria-label="PC 주요 메뉴">
-          {menu.map(({ Icon, label, id }) => (
-            <Link
-              href={routes[id]}
-              key={id}
-              aria-current={page === id ? 'page' : undefined}
-            >
-              <Icon size={18} />
-              {label}
-            </Link>
-          ))}
-        </nav>
-        <main id="main">
-          {page === 'home' && (
-            <>
-              <DashboardHome />
-              <ListingResources />
-            </>
-          )}
-          {page === 'favorites' && <PersonalRegions variant="favorites" />}
-          {page === 'alerts' && <PersonalRegions variant="alerts" />}
-          {page === 'analysis' && (
-            <AnalysisPage
-              scenario={scenario}
-              setScenario={setScenario}
-              inputs={inputs}
-              updateInput={(key: keyof typeof inputs, value: string) =>
-                setInputs((current) => ({ ...current, [key]: value }))
-              }
-              invested={invested}
-              projectedValue={projectedValue}
-              profit={profit}
-              returnRate={returnRate}
-              onOpenZone={() => openZone('u')}
-              onReset={() => {
-                setInputs(emptyAmounts());
-                setScenario('기준');
-              }}
-            />
-          )}
-          {page === 'my' && (
-            <MyPage
-              onNavigate={navigate}
-              accountPanel={children}
-              preferencesPanel={<PersonalRegions variant="settings" />}
-              favoritesPanel={<PersonalRegions variant="favorites" />}
-            />
-          )}
-          {!['home', 'favorites', 'alerts', 'analysis', 'my'].includes(page) &&
-            children}
-        </main>
-        <nav className="bottom-nav" aria-label="주요 메뉴">
-          {menu.map(({ Icon, label, id }) => (
-            <button
-              key={id}
-              className={
-                page === id ||
-                (page === 'detail' && id === 'areas') ||
-                (page === 'alerts' && id === 'favorites')
-                  ? 'active'
-                  : ''
-              }
-              onClick={() => navigate(id)}
-              aria-current={page === id ? 'page' : undefined}
-            >
-              <Icon size={22} strokeWidth={2.1} />
-              <small>{label}</small>
-            </button>
-          ))}
-        </nav>
-      </div>
-    </PrototypeContext.Provider>
+    <OfficialZoneFavoritesProvider>
+      <PrototypeContext.Provider
+        value={{ favorites, recent, toggleFavorite, openZone, navigate }}
+      >
+        <div className="app-shell">
+          <AppHeader
+            page={page}
+            title={pageTitles[page] ?? '정비ON AI'}
+            onBack={() => navigate(page === 'detail' ? 'areas' : 'home')}
+            onNavigate={navigate}
+          />
+          <nav className="desktop-nav" aria-label="PC 주요 메뉴">
+            {menu.map(({ Icon, label, id }) => (
+              <Link
+                href={routes[id]}
+                key={id}
+                aria-current={page === id ? 'page' : undefined}
+              >
+                <Icon size={18} />
+                {label}
+              </Link>
+            ))}
+          </nav>
+          <main id="main">
+            {page === 'home' && (
+              <>
+                <DashboardHome />
+                <ListingResources />
+              </>
+            )}
+            {page === 'favorites' && <PersonalRegions variant="favorites" />}
+            {page === 'alerts' && <PersonalRegions variant="alerts" />}
+            {page === 'analysis' && (
+              <AnalysisPage
+                scenario={scenario}
+                setScenario={setScenario}
+                inputs={inputs}
+                updateInput={(key: keyof typeof inputs, value: string) =>
+                  setInputs((current) => ({ ...current, [key]: value }))
+                }
+                invested={invested}
+                projectedValue={projectedValue}
+                profit={profit}
+                returnRate={returnRate}
+                onOpenZone={() => navigate('areas')}
+                onReset={() => {
+                  setInputs(emptyAmounts());
+                  setScenario('기준');
+                }}
+              />
+            )}
+            {page === 'my' && (
+              <MyPage
+                onNavigate={navigate}
+                accountPanel={children}
+                preferencesPanel={<PersonalRegions variant="settings" />}
+                favoritesPanel={<PersonalRegions variant="favorites" />}
+              />
+            )}
+            {!['home', 'favorites', 'alerts', 'analysis', 'my'].includes(
+              page,
+            ) && children}
+          </main>
+          <nav className="bottom-nav" aria-label="주요 메뉴">
+            {menu.map(({ Icon, label, id }) => (
+              <button
+                key={id}
+                className={
+                  page === id ||
+                  (page === 'detail' && id === 'areas') ||
+                  (page === 'alerts' && id === 'favorites')
+                    ? 'active'
+                    : ''
+                }
+                onClick={() => navigate(id)}
+                aria-current={page === id ? 'page' : undefined}
+              >
+                <Icon size={22} strokeWidth={2.1} />
+                <small>{label}</small>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </PrototypeContext.Provider>
+    </OfficialZoneFavoritesProvider>
   );
 }

@@ -1,9 +1,9 @@
 import 'server-only';
 import { getDb } from './db';
-import { districts, demoZones, type ZoneView } from './regions';
+import { districts, type ZoneView } from './regions';
 export type Catalog = {
   zones: ZoneView[];
-  mode: 'live' | 'demo';
+  mode: 'live';
   reason: 'empty' | 'unavailable' | null;
 };
 export async function getCatalog(): Promise<Catalog> {
@@ -23,8 +23,7 @@ export async function getCatalog(): Promise<Catalog> {
         },
       },
     });
-    if (!rows.length)
-      return { zones: demoZones, mode: 'demo', reason: 'empty' };
+    if (!rows.length) return { zones: [], mode: 'live', reason: 'empty' };
     return {
       mode: 'live',
       reason: null,
@@ -59,6 +58,6 @@ export async function getCatalog(): Promise<Catalog> {
     };
   } catch {
     console.error('catalog_read_failed');
-    return { zones: demoZones, mode: 'demo', reason: 'unavailable' };
+    return { zones: [], mode: 'live', reason: 'unavailable' };
   }
 }

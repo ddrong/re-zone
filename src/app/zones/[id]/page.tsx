@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { getOfficialZone } from '@/lib/public-zones';
-import { zones } from '@/lib/prototype-data';
 import { ZoneDetail } from '@/components/zone-detail';
 import { getPublicKakaoMapKey } from '@/lib/kakao-map-config';
 export const metadata = { title: '구역 상세 분석' };
@@ -21,8 +20,6 @@ export default function ZonePage({
 async function Detail({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await params;
-  const demo = zones.find((z) => z.id === id);
-  if (demo) return <ZoneDetail zone={demo} />;
   if (!/^BARA_\d{13}$/.test(id)) notFound();
   let zone;
   try {

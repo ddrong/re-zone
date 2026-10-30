@@ -70,23 +70,8 @@ const common = {
   onMarkAll: noop,
   onOpenNotice: noop,
 };
-const zone = data.zones[0];
-const notices = data.initialNotices.map((item) => ({ ...item, read: false }));
+// Retired demo pages remain only in the archived Vite prototype.
 const cases = [
-  ['HomePage', { ...common, favorites: ['u', 's'] }],
-  ['DetailPage', { ...common, zone, isFavorite: true }],
-  [
-    'FavoritesPage',
-    {
-      ...common,
-      tab: '내 관심',
-      setTab: noop,
-      favorites: ['u', 's'],
-      recent: [],
-      notices,
-    },
-  ],
-  ['AlertsPage', { ...common, notices }],
   [
     'AnalysisPage',
     {
@@ -134,10 +119,22 @@ assert.ok(
     .equals(fs.readFileSync(base + 'src/style.css')),
   'Original CSS bytes differ',
 );
-assert.ok(
-  fs
-    .readFileSync('public/assets/oni.png')
-    .equals(fs.readFileSync(base + 'public/assets/oni.png')),
-  'Mascot differs from prototype; review user-provided asset changes (binary contents suppressed)',
+
+for (const path of [
+  'public/assets/oni.png',
+  'public/assets/jeongbion-app-icon.png',
+  'public/assets/jeongbion-logo-transparent.png',
+  'public/assets/jeongbion-logo-white.png',
+  'public/og-image.png',
+]) {
+  const png = fs.readFileSync(path);
+  assert.equal(png.subarray(1, 4).toString(), 'PNG');
+  const width = png.readUInt32BE(16),
+    height = png.readUInt32BE(20);
+  assert.ok(width > 0 && height > 0);
+  if (path === 'public/og-image.png')
+    assert.deepEqual([width, height], [1200, 630]);
+}
+console.log(
+  'PASS retained calculator structure, original base CSS, current brand PNG files and 1200x630 OG dimensions; no pixel comparison',
 );
-console.log('PASS original mobile CSS and mascot binary parity');

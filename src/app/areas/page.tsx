@@ -10,7 +10,6 @@ type Params = Promise<{
   q?: string;
   type?: string;
   page?: string;
-  mode?: string;
   stage?: string;
 }>;
 export default function Areas({ searchParams }: { searchParams: Params }) {
@@ -34,22 +33,20 @@ async function InitialSearch({ searchParams }: { searchParams: Params }) {
   const page = Number(p.page);
   const validPage =
     Number.isInteger(page) && page >= 1 && page <= 100 ? page : 1;
-  const mode = p.mode === 'demo' ? 'demo' : 'official';
   const stage =
     typeof p.stage === 'string' && /^[0-8]$/.test(p.stage) ? p.stage : '';
   let result = null;
-  if (mode === 'official')
-    try {
-      result = await searchOfficialZones({
-        district: district?.code ?? '',
-        q: query,
-        type,
-        page: validPage,
-        stage,
-      });
-    } catch {
-      /* Never substitute demo records for failed official searches. */
-    }
+  try {
+    result = await searchOfficialZones({
+      district: district?.code ?? '',
+      q: query,
+      type,
+      page: validPage,
+      stage,
+    });
+  } catch {
+    /* Never substitute demo records for failed official searches. */
+  }
   return (
     <PublicExplorer
       mapKey={getPublicKakaoMapKey()}
@@ -58,7 +55,6 @@ async function InitialSearch({ searchParams }: { searchParams: Params }) {
       initialQuery={query}
       initialType={type || '전체'}
       initialPage={validPage}
-      initialMode={mode}
       initialStage={stage}
     />
   );

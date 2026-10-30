@@ -1,10 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AreasPage } from './prototype-views';
 import { usePrototype } from './prototype-shell';
 import { KakaoMap } from './kakao-map';
-import { zones } from '@/lib/prototype-data';
+import { OfficialZoneFavorite } from './official-zone-favorite';
 import { districts } from '@/lib/regions';
 import type { PublicZone } from '@/lib/public-zones';
 type Result = {
@@ -24,7 +23,6 @@ export function PublicExplorer({
   initialQuery = '',
   initialType = '전체',
   initialPage = 1,
-  initialMode = 'official',
 }: {
   mapKey: string;
   initialStage?: string;
@@ -33,26 +31,21 @@ export function PublicExplorer({
   initialQuery?: string;
   initialType?: string;
   initialPage?: number;
-  initialMode?: string;
 }) {
   const [stage, setStage] = useState(initialStage);
   const [lastSuccess, setLastSuccess] = useState(
     initialResult?.retrievedAt ?? '',
   );
-  const [mode, setMode] = useState(initialMode);
   const [type, setType] = useState(initialType);
   const [search, setSearch] = useState(initialQuery);
   const [district, setDistrict] = useState(initialDistrict);
   const [page, setPage] = useState(initialPage);
   const [result, setResult] = useState<Result | null>(initialResult);
-  const [loading, setLoading] = useState(
-    !initialResult && initialMode === 'official',
-  );
+  const [loading, setLoading] = useState(!initialResult);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const [selectedId, setSelectedId] = useState('');
   const ctx = usePrototype();
-  const router = useRouter();
   useEffect(() => {
     const query = new URLSearchParams();
     if (stage) query.set('stage', stage);
@@ -61,7 +54,6 @@ export function PublicExplorer({
     if (code) query.set('district', code);
     if (type !== '전체') query.set('type', type);
     if (page > 1) query.set('page', String(page));
-    if (mode === 'demo') query.set('mode', 'demo');
     if (new URLSearchParams(window.location.search).get('auth_success') === '1')
       query.set('auth_success', '1');
     const target = '/areas' + (query.size ? '?' + query : '');
@@ -70,9 +62,8 @@ export function PublicExplorer({
       window.location.pathname + window.location.search !== target
     )
       window.history.replaceState(null, '', target);
-  }, [mode, type, search, district, page, stage]);
+  }, [type, search, district, page, stage]);
   useEffect(() => {
-    if (mode !== 'official') return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -110,42 +101,13 @@ export function PublicExplorer({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [mode, type, search, district, page, stage, retry]);
-  const demo = zones.filter(
-    (z) =>
-      (type === '전체' || z.type === type) &&
-      (!district || z.district.includes(district)) &&
-      (z.name + ' ' + z.district).includes(search.trim()),
-  );
-  const visible = mode === 'official' ? (result?.zones ?? []) : demo;
+  }, [type, search, district, page, stage, retry]);
+  const visible = result?.zones ?? [];
   const openZone = (id: string) => ctx.openZone(id);
   return (
     <div className="explorer-workspace">
-      <div className="data-mode-switch" role="group" aria-label="자료 구분">
-        <button
-          className={mode === 'official' ? 'selected' : ''}
-          onClick={() => {
-            setMode('official');
-            setPage(1);
-          }}
-        >
-          부산시 공식 공개자료
-        </button>
-        <button
-          className={mode === 'demo' ? 'selected' : ''}
-          onClick={() => {
-            setMode('demo');
-            setPage(1);
-          }}
-        >
-          시연용 가상 데이터
-        </button>
-      </div>
-      <div
-        className={mode === 'official' ? 'official-status' : 'demo-status'}
-        role="status"
-      >
-        {mode === 'official' ? (
+      <div className="official-status" role="status">
+        {
           <>
             <strong>실제 정비사업 공개자료</strong>
             <span>
@@ -192,15 +154,7 @@ export function PublicExplorer({
               부산시 공식 출처 ↗
             </a>
           </>
-        ) : (
-          <>
-            <strong>시연용 가상 데이터</strong>
-            <span>
-              실제 정비사업 정보가 아니며 가상 구역에 임의 마커를 표시하지
-              않습니다.
-            </span>
-          </>
-        )}
+        }
       </div>
       <div className="stage-search-filter">
         <label htmlFor="stage-filter">추진 단계</label>
@@ -252,25 +206,16 @@ export function PublicExplorer({
           setPage(1);
         }}
         zones={visible}
-        favorites={ctx.favorites}
-        onToggleFavorite={(id: string) => {
-          const zone = visible.find((z) => z.id === id);
-          if (zone && !zone.demo) {
-            router.push(
-              '/zones/' + encodeURIComponent(zone.id) + '#official-zone-save',
-            );
-            return;
-          }
-          ctx.toggleFavorite(id);
-        }}
+        renderFavorite={(id: string) => (
+          <OfficialZoneFavorite externalId={id} compact />
+        )}
         onOpenZone={openZone}
-        official={mode === 'official'}
-        loading={mode === 'official' && loading}
+        loading={loading}
         mapPanel={
           <div id="region-map">
             <KakaoMap
               apiKey={mapKey}
-              zones={mode === 'official' ? visible : []}
+              zones={visible}
               district={district}
               selectedId={selectedId}
               onSelect={setSelectedId}
@@ -278,7 +223,7 @@ export function PublicExplorer({
           </div>
         }
       />
-      {mode === 'official' && result && (
+      {result && (
         <div className="regional-counts" aria-label="검색 조건별 지역 건수">
           {districts.map((d) => (
             <button
@@ -293,7 +238,7 @@ export function PublicExplorer({
           ))}
         </div>
       )}
-      {mode === 'official' && (
+      {
         <div className="public-pagination">
           <button
             disabled={page === 1 || loading}
@@ -309,7 +254,7 @@ export function PublicExplorer({
             다음
           </button>
         </div>
-      )}
+      }
     </div>
   );
 }

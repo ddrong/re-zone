@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { KakaoLogin } from './kakao-login';
+import { LoginLink } from './login-link';
 import {
   FavoriteForm,
   RemoveFavorite,
@@ -123,6 +124,9 @@ export function PersonalRegions({
       ) : !state.authenticated ? (
         <div className="personal-empty">
           <p>로그인하고 내 관심지역을 저장하세요.</p>
+          <LoginLink className="button-secondary">
+            이메일·비밀번호 로그인 →
+          </LoginLink>
           <KakaoLogin label="카카오톡 로그인하기" />
         </div>
       ) : !state.ready ? (
