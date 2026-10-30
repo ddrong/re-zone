@@ -89,83 +89,88 @@ export function AreasPage({
   onOpenZone,
   loading = false,
   mapPanel,
+  stageFilter,
 }) {
   const districts = ['전체', ...busanDistricts.map((d) => d.name)];
   return (
     <div className="areas-layout" data-source="official">
-      <div
-        className="segmented-control"
-        role="tablist"
-        aria-label="정비사업 유형"
-      >
-        {['전체', '재개발', '재건축'].map((type) => (
-          <button
-            key={type}
-            role="tab"
-            aria-selected={areaType === type}
-            className={areaType === type ? 'selected' : ''}
-            onClick={() => setAreaType(type)}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
-      <form
-        className="search-box"
-        role="search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSearch?.();
-        }}
-      >
-        <Search size={19} />
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          maxLength={80}
-          list="official-zone-suggestions"
-          aria-label="지역명 또는 구역명 검색"
-          placeholder="지역명 또는 구역명 검색"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch('')}
-            aria-label="검색어 지우기"
-          >
-            <X size={17} />
-          </button>
-        )}
-        <button type="submit" className="search-submit">
-          검색
-        </button>
-        <datalist id="official-zone-suggestions">
-          {(suggestions ?? []).map((name) => (
-            <option key={name} value={name} />
+      <div className="areas-controls">
+        <div
+          className="segmented-control"
+          role="tablist"
+          aria-label="정비사업 유형"
+        >
+          {['전체', '재개발', '재건축'].map((type) => (
+            <button
+              key={type}
+              role="tab"
+              aria-selected={areaType === type}
+              className={areaType === type ? 'selected' : ''}
+              onClick={() => setAreaType(type)}
+            >
+              {type}
+            </button>
           ))}
-        </datalist>
-      </form>
-
-      {mapPanel}
-
-      <div className="district-filter" aria-label="지역 필터">
-        {districts.map((district) => (
-          <button
-            key={district}
-            className={
-              districtFilter === (district === '전체' ? '' : district)
-                ? 'selected'
-                : ''
-            }
-            onClick={() =>
-              setDistrictFilter(district === '전체' ? '' : district)
-            }
-          >
-            {district}
+        </div>
+        <form
+          className="search-box"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSearch?.();
+          }}
+        >
+          <Search size={19} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            maxLength={80}
+            list="official-zone-suggestions"
+            aria-label="지역명 또는 구역명 검색"
+            placeholder="지역명 또는 구역명 검색"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              aria-label="검색어 지우기"
+            >
+              <X size={17} />
+            </button>
+          )}
+          <button type="submit" className="search-submit">
+            검색
           </button>
-        ))}
+          <datalist id="official-zone-suggestions">
+            {(suggestions ?? []).map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+        </form>
+        {stageFilter}
+        <div className="district-filter" aria-label="지역 필터">
+          {districts.map((district) => (
+            <button
+              key={district}
+              className={
+                districtFilter === (district === '전체' ? '' : district)
+                  ? 'selected'
+                  : ''
+              }
+              onClick={() =>
+                setDistrictFilter(district === '전체' ? '' : district)
+              }
+            >
+              {district}
+            </button>
+          ))}
+        </div>
       </div>
-      <Section title={`정비사업 ${visibleZones.length}곳`}>
+      {mapPanel}
+      <Section
+        className="areas-results"
+        title={`정비사업 ${visibleZones.length}곳`}
+      >
         {loading ? (
           <p role="status">부산시 공개자료 조회 중…</p>
         ) : visibleZones.length ? (

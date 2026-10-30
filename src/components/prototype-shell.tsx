@@ -157,6 +157,9 @@ export function PrototypeShell({ children }: { children: React.ReactNode }) {
               page,
             ) && children}
           </main>
+          <footer className="app-footer">
+            <p>copyright@jeongbion product by.동의과학대학교 Re.</p>
+          </footer>
           <nav className="bottom-nav" aria-label="주요 메뉴">
             {menu.map(({ Icon, label, id }) => (
               <button

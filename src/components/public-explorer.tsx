@@ -156,34 +156,6 @@ export function PublicExplorer({
           </>
         }
       </div>
-      <div className="stage-search-filter">
-        <label htmlFor="stage-filter">추진 단계</label>
-        <select
-          id="stage-filter"
-          value={stage}
-          onChange={(e) => {
-            setStage(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">전체 단계</option>
-          {[
-            '미확정',
-            '기본계획',
-            '구역 지정',
-            '추진위원회',
-            '조합 설립',
-            '사업시행',
-            '관리처분',
-            '이주·철거',
-            '착공·준공',
-          ].map((name, i) => (
-            <option key={i} value={i}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
       <AreasPage
         onSearch={() => {
           setPage(1);
@@ -211,6 +183,36 @@ export function PublicExplorer({
         )}
         onOpenZone={openZone}
         loading={loading}
+        stageFilter={
+          <div className="stage-search-filter">
+            <label htmlFor="stage-filter">추진 단계</label>
+            <select
+              id="stage-filter"
+              value={stage}
+              onChange={(e) => {
+                setStage(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">전체 단계</option>
+              {[
+                '미확정',
+                '기본계획',
+                '구역 지정',
+                '추진위원회',
+                '조합 설립',
+                '사업시행',
+                '관리처분',
+                '이주·철거',
+                '착공·준공',
+              ].map((name, i) => (
+                <option key={i} value={i}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
         mapPanel={
           <div id="region-map">
             <KakaoMap

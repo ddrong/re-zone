@@ -1935,3 +1935,195 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+.app-shell main {
+  width: 100%;
+  flex: 1 0 auto;
+}
+.app-footer {
+  width: 100%;
+  margin-top: auto;
+  padding: 15px 20px;
+  border-top: 1px solid #e1ebe7;
+  color: #647a8b;
+  background: #f0f6f3;
+  text-align: center;
+}
+.app-footer p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.areas-layout {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+.areas-controls {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+.areas-controls > .segmented-control,
+.areas-controls > .search-box,
+.areas-controls > .stage-search-filter,
+.areas-controls > .district-filter {
+  min-width: 0;
+  margin: 0;
+}
+.areas-controls > .stage-search-filter {
+  justify-content: space-between;
+}
+.areas-layout > #region-map,
+.areas-layout > .areas-results {
+  min-width: 0;
+}
+.areas-layout .areas-results {
+  margin: 0;
+}
+.areas-layout .areas-results .zone-stack {
+  grid-template-columns: minmax(0, 1fr);
+}
+.home-dashboard-grid > section {
+  align-self: start;
+}
+
+@media (min-width: 768px) {
+  .areas-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 18px 22px;
+    align-items: start;
+  }
+  .areas-controls {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(210px, 0.8fr) minmax(260px, 1.2fr);
+    grid-template-areas:
+      'type search'
+      'stage stage'
+      'district district';
+    align-items: center;
+  }
+  .areas-controls > .segmented-control {
+    grid-area: type;
+  }
+  .areas-controls > .search-box {
+    grid-area: search;
+  }
+  .areas-controls > .stage-search-filter {
+    grid-area: stage;
+    justify-content: flex-start;
+  }
+  .areas-controls > .district-filter {
+    grid-area: district;
+  }
+  .areas-layout > #region-map {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .areas-layout > .areas-results {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .areas-layout .map-panel {
+    margin: 0;
+  }
+  .areas-layout .kakao-map-canvas {
+    height: clamp(360px, 42vw, 560px);
+  }
+  .areas-layout .map-link-fallback {
+    min-height: 360px;
+  }
+  .areas-layout .areas-results .zone-stack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-footer {
+    padding: 16px 28px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .app-shell {
+    width: min(100%, 1600px);
+    max-width: 1600px;
+    padding-bottom: 0;
+  }
+  .app-shell main {
+    max-width: 1480px;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 20px clamp(28px, 3.2vw, 52px) 42px;
+  }
+  .desktop-nav {
+    padding-right: clamp(28px, 3.2vw, 52px);
+    padding-left: clamp(28px, 3.2vw, 52px);
+  }
+  .areas-layout {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    column-gap: clamp(20px, 2.2vw, 36px);
+  }
+}
+
+@media (min-width: 1200px) {
+  .home-dashboard-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .home-dashboard-grid > .district-dashboard {
+    grid-column: span 7;
+  }
+  .home-dashboard-grid > .personal-regions {
+    grid-column: span 5;
+  }
+  .home-dashboard-grid > .top-zones {
+    grid-column: span 5;
+  }
+  .home-dashboard-grid > .ai-overview {
+    grid-column: span 7;
+  }
+  .areas-controls {
+    grid-template-areas:
+      'type search'
+      'stage district';
+    grid-template-columns: minmax(220px, 0.75fr) minmax(360px, 1.25fr);
+  }
+  .areas-controls > .stage-search-filter {
+    justify-content: flex-start;
+  }
+  .areas-layout > #region-map,
+  .areas-layout > .areas-results {
+    grid-row: 2;
+  }
+  .areas-layout .kakao-map-canvas {
+    height: clamp(420px, 34vw, 580px);
+  }
+}
+
+@media (max-width: 767px) {
+  .app-footer {
+    padding: 13px 18px;
+  }
+  .app-footer p {
+    font-size: 11px;
+  }
+  .areas-controls > .stage-search-filter {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid #d8e4e1;
+    border-radius: 12px;
+    background: white;
+  }
+  .areas-controls > .stage-search-filter select {
+    max-width: 65%;
+  }
+  .areas-layout .map-panel {
+    margin: 0;
+  }
+}
